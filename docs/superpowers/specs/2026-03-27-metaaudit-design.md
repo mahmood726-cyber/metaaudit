@@ -296,6 +296,10 @@ Full pipeline on 5 hand-picked reviews:
 - **Content:** MetaAudit as reusable open-source tool
 - **Timing:** After main paper accepted
 
+### AI Disclosure Statement (required in all protocols and E156 micro-papers)
+
+> This work represents a compiler-generated evidence micro-publication (i.e., a structured, pipeline-based synthesis output). AI is used as a constrained synthesis engine operating on structured inputs and predefined rules, rather than as an autonomous author. Deterministic components of the pipeline, together with versioned, reproducible evidence capsules (TruthCert), are designed to support transparent and auditable outputs. All results and text were reviewed and verified by the author, who takes full responsibility for the content. The workflow operationalises key transparency and reporting principles consistent with CONSORT-AI/SPIRIT-AI, including explicit input specification, predefined schemas, logged human–AI interaction, and reproducible outputs.
+
 ### Framing
 - NOT claiming Cochrane is bad — claiming even the best evidence has measurable, systematic weaknesses
 - NOT claiming MAs should be abandoned — claiming they need automated quality checks as standard practice
