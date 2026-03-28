@@ -74,6 +74,7 @@ class ReviewData:
     review_doi: Optional[str] = None
     review_title: Optional[str] = None
     analyses: list[AnalysisGroup] = field(default_factory=list)
+    study_names: set = field(default_factory=set)
 
 
 def split_by_analysis(df: pd.DataFrame, review_id: str = "",
@@ -115,10 +116,12 @@ def load_rda_file(path: str | Path) -> ReviewData:
     review_doi = df["review_doi"].iloc[0] if "review_doi" in df.columns else None
     review_title = df["review_title"].iloc[0] if "review_title" in df.columns else None
     analyses = split_by_analysis(df, review_id, review_doi, review_title)
+    # Extract study names once at load time to avoid re-scanning df later
+    study_names = set(df["Study"].dropna().unique()) if "Study" in df.columns else set()
     return ReviewData(
         review_id=review_id, df=df, data_type=data_type,
         review_doi=review_doi, review_title=review_title,
-        analyses=analyses,
+        analyses=analyses, study_names=study_names,
     )
 
 

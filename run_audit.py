@@ -35,7 +35,11 @@ DEFAULT_DATA_DIR = r"C:\Users\user\OneDrive - NHS\Documents\Pairwise70\data"
 DEFAULT_OUTPUT_DIR = r"C:\MetaAudit\results"
 
 
-def run_detectors_on_analysis(ag, ma, study_data, overlap_index):
+def run_detectors_on_analysis(ag, ma, study_data, overlap_result):
+    """Run all detectors for one analysis group.
+
+    overlap_result: pre-computed DetectorResult for this review's overlap check.
+    """
     results = []
     results.append(detect_prediction_gap(ma))
     context = {}
@@ -56,10 +60,7 @@ def run_detectors_on_analysis(ag, ma, study_data, overlap_index):
     results.append(detect_small_study(ma))
     results.append(detect_excess_sig(ma))
     results.append(detect_integrity(ag.df, ag.data_type))
-    study_names = set()
-    if "Study" in ag.df.columns:
-        study_names = set(ag.df["Study"].dropna().unique())
-    results.append(detect_overlap(ag.review_id, study_names, overlap_index))
+    results.append(overlap_result)
     results.append(detect_overclaiming(ma))
     results.append(detect_certainty_mismatch(
         grade_certainty=None,
@@ -88,12 +89,18 @@ def main():
     print("Building study overlap index...")
     studies_by_review = {}
     for r in reviews:
-        study_names = set()
-        if "Study" in r.df.columns:
+        study_names = set(r.study_names) if r.study_names else set()
+        if not study_names and "Study" in r.df.columns:
             study_names = set(r.df["Study"].dropna().unique())
         studies_by_review[r.review_id] = study_names
     overlap_index = build_overlap_index(studies_by_review)
     print(f"Found {len(overlap_index)} review pairs with shared studies")
+
+    # Pre-compute overlap result once per review (not once per MA)
+    overlap_cache: dict[str, DetectorResult] = {}
+    for r in reviews:
+        study_names = studies_by_review[r.review_id]
+        overlap_cache[r.review_id] = detect_overlap(r.review_id, study_names, overlap_index)
 
     all_results: dict[str, list[DetectorResult]] = {}
     total_analyses = sum(len(r.analyses) for r in reviews)
@@ -104,7 +111,9 @@ def main():
         for ag in review.analyses:
             ma = recompute_ma(ag.df, ag.data_type)
             study_data = ag.df if ag.data_type == DataType.BINARY else None
-            results = run_detectors_on_analysis(ag, ma, study_data, overlap_index)
+            results = run_detectors_on_analysis(
+                ag, ma, study_data, overlap_cache[ag.review_id]
+            )
             all_results[ag.ma_id] = results
             done += 1
             if done % 100 == 0:
@@ -145,7 +154,9 @@ def main():
 
     prevalence_path = os.path.join(args.output_dir, "prevalence.json")
     with open(prevalence_path, "w") as f:
-        json.dump(prevalence, f, indent=2)
+        # Replace NaN with None so output is valid JSON
+        clean_prev = {k: (v if v == v else None) for k, v in prevalence.items()}
+        json.dump(clean_prev, f, indent=2)
 
     cooccurrence.to_csv(os.path.join(args.output_dir, "cooccurrence.csv"))
 

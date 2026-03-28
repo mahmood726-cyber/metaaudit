@@ -15,13 +15,18 @@ _P_THRESHOLD = 0.10
 _SPEARMAN_THRESHOLD = 0.40
 
 
-def _peters_test(yi: np.ndarray, vi: np.ndarray) -> float:
-    """Peters' asymmetry test: OLS regression of effect (yi) on precision (1/SE).
+def _egger_precision_test(yi: np.ndarray, vi: np.ndarray) -> float:
+    """Regression of effect on precision (1/SE). Variant of Egger's test.
 
-    A non-zero intercept indicates asymmetry (small studies differ from large).
-    Returns two-tailed p-value for the slope coefficient — positive slope
-    means larger studies show smaller effects (small-study effect present).
+    OLS regression of yi on 1/SE. A significant slope indicates that
+    larger-precision (bigger) studies have systematically different effects
+    from smaller-precision studies — a small-study effect pattern.
+    Returns two-tailed p-value for the slope coefficient.
     Uses scipy linregress for numerical stability.
+
+    Note: True Peters' test (Peters et al. 2006) regresses on 1/N, which
+    requires study N not available in this context. This precision-based
+    variant is used instead.
     """
     precision = 1.0 / np.sqrt(vi)   # 1/SE: larger for big studies
     try:
@@ -42,12 +47,12 @@ def _spearman_abs_effect_vs_variance(yi: np.ndarray, vi: np.ndarray) -> tuple[fl
 
 
 def detect_small_study(rma: RecomputedMA) -> DetectorResult:
-    """Detect small-study effects using Peters' test and Spearman correlation.
+    """Detect small-study effects using precision-regression test and Spearman correlation.
 
     Rules:
     - insufficient_data if k < 10
-    - FAIL if Peters p < 0.10 AND Spearman rho > 0.40 AND small studies larger
-    - WARN if either Peters or Spearman indicates asymmetry
+    - FAIL if precision-regression p < 0.10 AND Spearman rho > 0.40 AND small studies larger
+    - WARN if either precision-regression or Spearman indicates asymmetry
     - PASS otherwise
     """
     if rma.k < _K_MIN:
@@ -58,7 +63,7 @@ def detect_small_study(rma: RecomputedMA) -> DetectorResult:
     yi = rma.yi
     vi = rma.vi
 
-    peters_p = _peters_test(yi, vi)
+    precision_p = _egger_precision_test(yi, vi)
     spearman_rho, spearman_p = _spearman_abs_effect_vs_variance(yi, vi)
 
     # Guard against NaN (e.g. constant input)
@@ -66,41 +71,41 @@ def detect_small_study(rma: RecomputedMA) -> DetectorResult:
         spearman_rho = 0.0
     if not np.isfinite(spearman_p):
         spearman_p = 1.0
-    if not np.isfinite(peters_p):
-        peters_p = 1.0
+    if not np.isfinite(precision_p):
+        precision_p = 1.0
 
     # "Small studies larger" means high vi (small studies) correlate with large |effect|
     small_studies_larger = spearman_rho > 0
 
     metrics = {
         "insufficient_data": False,
-        "peters_p": float(peters_p),
+        "peters_p": float(precision_p),  # keep key name for backward compat
         "spearman_rho": float(spearman_rho),
         "spearman_p": float(spearman_p),
         "small_studies_larger": small_studies_larger,
     }
 
-    peters_positive = peters_p < _P_THRESHOLD
+    precision_positive = precision_p < _P_THRESHOLD
     spearman_positive = (spearman_p < _P_THRESHOLD) and small_studies_larger
 
-    if peters_positive and spearman_rho > _SPEARMAN_THRESHOLD:
+    if precision_positive and spearman_rho > _SPEARMAN_THRESHOLD:
         return DetectorResult(
             module=MODULE,
             severity=Severity.FAIL,
             detail=(
-                f"Strong small-study effect: Peters p={peters_p:.3f}, "
+                f"Strong small-study effect: precision-regression p={precision_p:.3f}, "
                 f"Spearman rho={spearman_rho:.3f}. "
                 "Small studies show larger effects — possible reporting/publication bias."
             ),
             metrics=metrics,
         )
 
-    if peters_positive or spearman_positive:
+    if precision_positive or spearman_positive:
         return DetectorResult(
             module=MODULE,
             severity=Severity.WARN,
             detail=(
-                f"Possible small-study effect: Peters p={peters_p:.3f}, "
+                f"Possible small-study effect: precision-regression p={precision_p:.3f}, "
                 f"Spearman rho={spearman_rho:.3f}. Consider funnel plot."
             ),
             metrics=metrics,
@@ -111,7 +116,7 @@ def detect_small_study(rma: RecomputedMA) -> DetectorResult:
         severity=Severity.PASS,
         detail=(
             f"No small-study effect detected "
-            f"(Peters p={peters_p:.3f}, Spearman rho={spearman_rho:.3f})."
+            f"(precision-regression p={precision_p:.3f}, Spearman rho={spearman_rho:.3f})."
         ),
         metrics=metrics,
     )

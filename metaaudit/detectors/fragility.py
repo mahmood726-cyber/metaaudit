@@ -37,9 +37,9 @@ def _compute_pooled_p(e_cases: np.ndarray, e_n: np.ndarray,
 def _compute_mafi(study_data: pd.DataFrame) -> int:
     """Compute meta-analytic fragility index.
 
-    For each iteration, add one event to the arm with fewer events in the
-    study that has the smallest event count in the fewer-events arm.
-    Continue until pooled p >= 0.05.
+    For each iteration, try adding 1 event to EACH arm of EACH study and pick
+    the single modification that most efficiently moves the pooled p-value
+    toward non-significance (maximises p). Continue until pooled p >= 0.05.
     """
     e_cases = study_data["Experimental.cases"].values.astype(float).copy()
     e_n = study_data["Experimental.N"].values.astype(float).copy()
@@ -47,32 +47,49 @@ def _compute_mafi(study_data: pd.DataFrame) -> int:
     c_n = study_data["Control.N"].values.astype(float).copy()
 
     mafi = 0
-    max_iter = 200  # guard against infinite loop
+    max_iter = 200
 
     for _ in range(max_iter):
         p = _compute_pooled_p(e_cases, e_n, c_cases, c_n)
         if p >= 0.05:
             break
 
-        # Find study with fewest events in the experimental arm (fewer-events arm)
-        # Per MAFI convention: modify arm with fewer events
-        # Identify the arm with fewer events per study and pick study with fewest events
-        exp_events = e_cases.copy()
-        ctrl_events = c_cases.copy()
+        # Try adding 1 event to each arm of each study; pick the modification
+        # that produces the highest p-value (most efficient path to non-significance)
+        best_p = -1.0
+        best_study = -1
+        best_arm = ""
+        k = len(e_cases)
 
-        # For each study, determine which arm has fewer events
-        arm_fewer = np.where(exp_events <= ctrl_events, "exp", "ctrl")
+        for i in range(k):
+            # Try adding to experimental arm
+            if e_cases[i] < e_n[i]:
+                e_cases[i] += 1
+                trial_p = _compute_pooled_p(e_cases, e_n, c_cases, c_n)
+                if trial_p > best_p:
+                    best_p = trial_p
+                    best_study = i
+                    best_arm = "exp"
+                e_cases[i] -= 1  # undo
 
-        # Among the fewer-events arm values, find the study with fewest
-        fewer_vals = np.where(arm_fewer == "exp", exp_events, ctrl_events)
-        study_idx = int(np.argmin(fewer_vals))
+            # Try adding to control arm
+            if c_cases[i] < c_n[i]:
+                c_cases[i] += 1
+                trial_p = _compute_pooled_p(e_cases, e_n, c_cases, c_n)
+                if trial_p > best_p:
+                    best_p = trial_p
+                    best_study = i
+                    best_arm = "ctrl"
+                c_cases[i] -= 1  # undo
 
-        # Add one event to that arm (cap at N)
-        if arm_fewer[study_idx] == "exp":
-            e_cases[study_idx] = min(e_cases[study_idx] + 1, e_n[study_idx])
+        if best_study == -1:
+            break  # All cells at cap
+
+        # Apply the best modification
+        if best_arm == "exp":
+            e_cases[best_study] += 1
         else:
-            c_cases[study_idx] = min(c_cases[study_idx] + 1, c_n[study_idx])
-
+            c_cases[best_study] += 1
         mafi += 1
 
     return mafi

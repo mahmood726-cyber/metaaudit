@@ -45,47 +45,83 @@ def compute_smd(
     e_mean: np.ndarray, e_sd: np.ndarray, e_n: np.ndarray,
     c_mean: np.ndarray, c_sd: np.ndarray, c_n: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Compute Hedges' g (bias-corrected SMD) and sampling variances."""
+    """Compute Hedges' g (bias-corrected SMD) and sampling variances.
+
+    Guards against n_total < 3 (df < 1) which would cause division by zero.
+    Invalid studies (df < 1) are returned as NaN.
+    """
     n_total = e_n + c_n
-    sp = np.sqrt(((e_n - 1) * e_sd ** 2 + (c_n - 1) * c_sd ** 2) / (n_total - 2))
-    d = (e_mean - c_mean) / sp
     df = n_total - 2
-    j = 1.0 - 3.0 / (4.0 * df - 1.0)
+    # Guard: need df >= 1 for pooled SD and Hedges' J
+    invalid = df < 1
+    df_safe = np.where(invalid, 1, df)  # avoid division by zero in computation
+    sp = np.sqrt(((e_n - 1) * e_sd ** 2 + (c_n - 1) * c_sd ** 2) / df_safe)
+    d = (e_mean - c_mean) / np.where(sp == 0, np.finfo(float).eps, sp)
+    j = 1.0 - 3.0 / (4.0 * df_safe - 1.0)
     yi = j * d
-    vi = (n_total / (e_n * c_n)) + (yi ** 2) / (2.0 * n_total)
+    # P1-1 fix: use df (not n_total) in variance denominator per Hedges (1981)
+    vi = (n_total / (e_n * c_n)) + (yi ** 2) / (2.0 * df_safe)
+    # Mark invalid studies as NaN
+    yi = np.where(invalid, np.nan, yi)
+    vi = np.where(invalid, np.nan, vi)
     return yi, vi
 
 
 def _reml_tau2(yi: np.ndarray, vi: np.ndarray, max_iter: int = 100,
-               tol: float = 1e-6) -> float:
-    """Estimate tau² using REML (Fisher scoring with DL start)."""
+               tol: float = 1e-6) -> tuple[float, bool]:
+    """Estimate tau² using true REML Fisher scoring with DL starting value.
+
+    Returns (tau2, converged). If not converged, caller should fall back to DL.
+    """
     k = len(yi)
     if k < 2:
-        return 0.0
+        return 0.0, True
+    # DL starting value
     wi = 1.0 / vi
     w_sum = wi.sum()
     theta_fe = (wi * yi).sum() / w_sum
     Q = ((yi - theta_fe) ** 2 * wi).sum()
     c = w_sum - (wi ** 2).sum() / w_sum
     tau2 = max(0.0, (Q - (k - 1)) / c)
+    converged = False
     for _ in range(max_iter):
         w = 1.0 / (vi + tau2)
         w_sum = w.sum()
         theta = (w * yi).sum() / w_sum
         resid = yi - theta
-        Q_w = ((resid ** 2) * w).sum()
-        tau2_new = max(0.0, tau2 + (Q_w - (k - 1)) / (w ** 2).sum())
+        # REML gradient: 0.5 * (Q_w - (k-1)) where Q_w = sum(w^2 * resid^2)
+        Q_w = (w * resid ** 2).sum()
+        # REML Fisher information:
+        # I = 0.5 * (sum(w^2) - 2*sum(w^3)/sum(w) + (sum(w^2)/sum(w))^2)
+        w2 = (w ** 2).sum()
+        w3 = (w ** 3).sum()
+        info = 0.5 * (w2 - 2.0 * w3 / w_sum + (w2 / w_sum) ** 2)
+        if info <= 0:
+            break
+        gradient = 0.5 * (Q_w - (k - 1))
+        tau2_new = max(0.0, tau2 + gradient / info)
         if abs(tau2_new - tau2) < tol:
             tau2 = tau2_new
+            converged = True
             break
         tau2 = tau2_new
-    return tau2
+    else:
+        converged = False
+    return tau2, converged
 
 
 def pool_effects_reml(yi: np.ndarray, vi: np.ndarray) -> dict:
     """Pool effects using REML random-effects model with HKSJ adjustment."""
     k = len(yi)
-    tau2 = _reml_tau2(yi, vi)
+    tau2, converged = _reml_tau2(yi, vi)
+    if not converged:
+        # Fall back to DerSimonian-Laird (closed-form)
+        wi = 1.0 / vi
+        w_sum = wi.sum()
+        theta_fe = (wi * yi).sum() / w_sum
+        Q_dl = ((yi - theta_fe) ** 2 * wi).sum()
+        c = w_sum - (wi ** 2).sum() / w_sum
+        tau2 = max(0.0, (Q_dl - (k - 1)) / c)
     w = 1.0 / (vi + tau2)
     w_sum = w.sum()
     estimate = (w * yi).sum() / w_sum
@@ -116,19 +152,24 @@ def pool_effects_reml(yi: np.ndarray, vi: np.ndarray) -> dict:
         "Q": float(Q),
         "k": k,
         "significant": p_value < 0.05,
+        "converged": converged,
     }
 
 
 def compute_prediction_interval(
-    estimate: float, se: float, tau2: float, k: int
+    estimate: float, se_hksj: float, tau2: float, k: int
 ) -> dict:
-    """Compute 95% prediction interval (Higgins-Thompson-Spiegelhalter)."""
+    """Compute 95% prediction interval (Higgins-Thompson-Spiegelhalter).
+
+    Uses HKSJ-adjusted SE so the PI correctly accounts for uncertainty in
+    the pooled estimate.
+    """
     if k < 3:
         return {"pi_lower": float("-inf"), "pi_upper": float("inf"),
                 "computable": False}
     df = k - 2
     t_crit = stats.t.ppf(0.975, df)
-    pi_se = np.sqrt(se ** 2 + tau2)
+    pi_se = np.sqrt(se_hksj ** 2 + tau2)
     pi_lower = estimate - t_crit * pi_se
     pi_upper = estimate + t_crit * pi_se
     return {
@@ -214,7 +255,7 @@ def recompute_ma(df, data_type: DataType) -> RecomputedMA:
         )
     pooled = pool_effects_reml(yi, vi)
     pi = compute_prediction_interval(
-        pooled["estimate"], pooled["se"], pooled["tau2"], k
+        pooled["estimate"], pooled["se_hksj"], pooled["tau2"], k
     )
     return RecomputedMA(
         k=k, yi=yi, vi=vi,

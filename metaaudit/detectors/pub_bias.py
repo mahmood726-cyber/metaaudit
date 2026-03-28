@@ -17,58 +17,56 @@ _WARN_COUNT = 1
 
 
 def _egger_test(yi: np.ndarray, vi: np.ndarray) -> float:
-    """Egger's test: WLS regression of standardised effect (z) on precision (1/se).
+    """Egger's test: standard unweighted OLS regression of z on precision (1/SE).
 
-    Returns two-tailed p-value for the intercept (asymmetry test).
+    Regresses z = yi/SE on precision = 1/SE. A non-zero intercept indicates
+    funnel asymmetry. Returns two-tailed p-value for the intercept.
+    This is the original Egger et al. (1997) formulation.
     """
     se = np.sqrt(vi)
     precision = 1.0 / se
     z = yi / se
-
-    # WLS with weights = precision^2 = 1/vi
-    w = 1.0 / vi
     n = len(yi)
-
-    # Design matrix [intercept, precision]
-    X = np.column_stack([np.ones(n), precision])
-    W = np.diag(w)
-
     try:
-        XtWX = X.T @ W @ X
-        XtWy = X.T @ (W @ z)
-        beta = np.linalg.solve(XtWX, XtWy)
-        residuals = z - X @ beta
-        sigma2 = (w * residuals ** 2).sum() / (n - 2)
-        cov_beta = sigma2 * np.linalg.inv(XtWX)
-        se_intercept = np.sqrt(cov_beta[0, 0])
-        t_stat = beta[0] / se_intercept if se_intercept > 0 else 0.0
+        slope, intercept, r_value, p_value, se_slope = stats.linregress(precision, z)
+        # linregress p-value is for the slope; recompute for the intercept
+        predicted = intercept + slope * precision
+        residuals = z - predicted
+        mse = (residuals ** 2).sum() / (n - 2)
+        ss_x = ((precision - precision.mean()) ** 2).sum()
+        se_intercept = np.sqrt(mse * (1.0 / n + precision.mean() ** 2 / ss_x))
+        t_stat = intercept / se_intercept if se_intercept > 0 else 0.0
         p_value = 2 * (1 - stats.t.cdf(abs(t_stat), df=n - 2))
         return float(p_value)
-    except np.linalg.LinAlgError:
+    except Exception:
         return 1.0
 
 
 def _begg_test(yi: np.ndarray, vi: np.ndarray) -> float:
-    """Begg's test: Kendall's tau between standardised effects and sampling variance.
+    """Begg's test: Kendall's tau between variance-adjusted residuals and variance.
 
+    Implements Begg & Mazumdar (1994): adjusts residuals for between-study
+    variance before computing Kendall's tau correlation with sampling variance.
     Returns two-tailed p-value.
     """
-    se = np.sqrt(vi)
     w = 1.0 / vi
-    w_mean = w.mean()
-    # Adjusted standardised effects as in Begg & Mazumdar 1994
-    # Use Kendall tau between (yi - estimate_adj) and vi
     estimate = (w * yi).sum() / w.sum()
-    # Variance-stabilised residuals
-    adj_yi = yi - estimate
-    tau, p_value = stats.kendalltau(adj_yi, vi)
+    # Adjusted variance per Begg & Mazumdar (1994): vi - 1/sum(w)
+    v_bar = 1.0 / w.sum()
+    adj_var = vi - v_bar
+    # Avoid negative adjusted variance
+    adj_var = np.maximum(adj_var, 1e-10)
+    adj_resid = (yi - estimate) / np.sqrt(adj_var)
+    tau, p_value = stats.kendalltau(adj_resid, vi)
     return float(p_value)
 
 
-def _trim_and_fill(yi: np.ndarray, vi: np.ndarray, max_iter: int = 50) -> int:
+def _trim_and_fill(yi: np.ndarray, vi: np.ndarray, tau2: float = 0.0,
+                   max_iter: int = 50) -> int:
     """Trim-and-fill: estimate number of missing studies (k0).
 
-    Uses L0 estimator (Duval & Tweedie 2000).
+    Uses L0 estimator (Duval & Tweedie 2000) with random-effects weights
+    (1/(vi + tau2)) so the centering is consistent with the RE model.
     Returns estimated k0.
     """
     n = len(yi)
@@ -76,13 +74,10 @@ def _trim_and_fill(yi: np.ndarray, vi: np.ndarray, max_iter: int = 50) -> int:
         return 0
 
     for _ in range(max_iter):
-        w = 1.0 / vi
+        # Use RE weights with the provided tau2
+        w = 1.0 / (vi + tau2)
         estimate = (w * yi).sum() / w.sum()
-        # Rank by |yi - estimate|, then identify outliers on the positive side
-        # (assuming effect is negative on average, we look for inflated positive studies)
         centered = yi - estimate
-        # Sort by absolute value; assign ranks
-        ranks = np.argsort(np.abs(centered)) + 1  # 1-based ranks
 
         # L0 estimator: count studies that are on the opposite side
         positive_count = (centered > 0).sum()
@@ -118,8 +113,8 @@ def _trim_and_fill(yi: np.ndarray, vi: np.ndarray, max_iter: int = 50) -> int:
         vi_trimmed = vi[keep]
         if len(yi_trimmed) < 2:
             break
-        # Re-estimate with trimmed data
-        w = 1.0 / vi_trimmed
+        # Re-estimate with trimmed data using RE weights
+        w = 1.0 / (vi_trimmed + tau2)
         estimate = (w * yi_trimmed).sum() / w.sum()
         break  # Single-pass approximation is sufficient for flagging
 
@@ -146,7 +141,7 @@ def detect_pub_bias(rma: RecomputedMA) -> DetectorResult:
 
     egger_p = _egger_test(yi, vi)
     begg_p = _begg_test(yi, vi)
-    k0 = _trim_and_fill(yi, vi)
+    k0 = _trim_and_fill(yi, vi, tau2=rma.tau2)
 
     # For trim-and-fill, flag if k0 >= 2 (at least 2 missing studies)
     trimfill_positive = k0 >= 2

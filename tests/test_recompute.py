@@ -84,7 +84,7 @@ def test_pool_reml_heterogeneous():
 
 def test_prediction_interval():
     pi = compute_prediction_interval(
-        estimate=-0.5, se=0.1, tau2=0.05, k=5
+        estimate=-0.5, se_hksj=0.1, tau2=0.05, k=5
     )
     assert pi["pi_lower"] < -0.5
     assert pi["pi_upper"] > -0.5
