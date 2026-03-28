@@ -48,6 +48,11 @@ def detect_overclaiming(rma: RecomputedMA) -> DetectorResult:
             metrics={"insufficient_data": False},
         )
 
+    if rma.measure == "GIV":
+        return DetectorResult.insufficient_data(
+            MODULE, "GIV measure has no standard MCID — cannot assess overclaiming"
+        )
+
     mcid = _get_mcid(rma.measure)
     effect_abs = abs(rma.estimate)
     fraction_of_mcid = effect_abs / mcid if mcid > 0 else float("inf")

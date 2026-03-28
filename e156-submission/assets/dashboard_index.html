@@ -6,7 +6,6 @@
 <title>MetaAudit — Cochrane Meta-Analysis Quality Dashboard</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
 :root{
   --bg:#0f0f1a;--surface:#1a1a2e;--surface2:#252545;--surface3:#2e2e55;
   --accent:#7c6af7;--accent2:#4fc3f7;--accent3:#f06292;
@@ -151,31 +150,31 @@ tr:hover td{background:var(--surface2)}
 
 <!-- View 0: Global Summary -->
 <section class="view active" id="view-0" aria-label="Global Summary">
-  <div class="hero-grid" id="hero-grid" aria-live="polite"></div>
+  <div class="hero-grid" id="hero-grid"></div>
 
   <div class="callout">
-    <strong>Key finding:</strong> 29.5% of Cochrane meta-analyses have at least one methodological
-    flaw flagged by automated audit. <strong>Publication bias (37.2%)</strong> is the most prevalent
-    single concern, followed by model misspecification (15.1%) and prediction gap (11.2%).
+    <strong>Key finding:</strong> 31.2% of Cochrane meta-analyses have at least one methodological
+    flaw flagged by automated audit. <strong>Publication bias (48.0%)</strong> is the most prevalent
+    single concern, followed by model misspecification (15.1%) and prediction gap (10.9%).
     Model misspecification and excess significance co-occur strongly
-    (<strong>phi&nbsp;=&nbsp;0.384</strong>).
+    (<strong>phi&nbsp;=&nbsp;0.389</strong>).
   </div>
 
   <div class="chart-row">
     <div class="panel">
       <h3>Flaw Prevalence by Module</h3>
-      <canvas id="cv-prevalence" aria-label="Horizontal bar chart showing flaw prevalence by module. Publication bias 37.2%, model misspecification 15.1%, prediction gap 11.2%, small-study effects 8.6%, excess significance 6.4%, integrity 3.4%"></canvas>
+      <canvas id="cv-prevalence"></canvas>
     </div>
     <div class="panel">
       <h3>Overall Severity Distribution</h3>
-      <canvas id="cv-donut" height="300" aria-label="Donut chart showing severity distribution across all detections. PASS 57.5%, INSUFF 29.5%, WARN 9.0%, FAIL 3.3%, CRITICAL 0.6%"></canvas>
+      <canvas id="cv-donut" height="300"></canvas>
     </div>
   </div>
 
   <div class="chart-row single">
     <div class="panel">
       <h3>Number of Flaws per Meta-Analysis (FAIL + CRITICAL count)</h3>
-      <canvas id="cv-histogram" height="220" aria-label="Histogram of flaw counts per meta-analysis. 4391 with 0 flaws, 1205 with 1 flaw, 437 with 2 flaws, 196 with 3 or more flaws"></canvas>
+      <canvas id="cv-histogram" height="220"></canvas>
     </div>
   </div>
 </section>
@@ -184,15 +183,15 @@ tr:hover td{background:var(--surface2)}
 <section class="view" id="view-1" aria-label="Co-occurrence Heatmap">
   <div class="callout">
     <strong>Strongest co-occurrences:</strong>
-    Model Misspec. &#8596; Excess Sig. (<strong>phi&nbsp;=&nbsp;0.384</strong>),&nbsp;
-    Prediction Gap &#8596; Model Misspec. (<strong>phi&nbsp;=&nbsp;0.366</strong>),&nbsp;
+    Model Misspec. &#8596; Excess Sig. (<strong>phi&nbsp;=&nbsp;0.389</strong>),&nbsp;
+    Prediction Gap &#8596; Model Misspec. (<strong>phi&nbsp;=&nbsp;0.359</strong>),&nbsp;
     Pub. Bias &#8596; Small-Study (<strong>phi&nbsp;=&nbsp;0.278</strong>).
     Hover over any cell to see the exact phi value.
     Diagonal = 1.0 (self-correlation, shown in red).
   </div>
   <div class="panel" style="overflow-x:auto">
     <h3>Phi Correlation Heatmap (11 &times; 11)</h3>
-    <canvas id="cv-heatmap" aria-label="11 by 11 phi correlation heatmap showing co-occurrence between flaw detectors. Strongest: model misspecification and excess significance at 0.384"></canvas>
+    <canvas id="cv-heatmap"></canvas>
   </div>
 </section>
 
@@ -832,16 +831,14 @@ function renderTable() {
 
   body.innerHTML = slice.map(function(r) {
     var dotCls = 'sev-green';
-    var sevText = 'PASS';
-    if (r.fails >= 3) { dotCls = 'sev-red'; sevText = 'HIGH'; }
-    else if (r.fails >= 1) { dotCls = 'sev-amber'; sevText = 'WARN'; }
+    if (r.fails >= 3) dotCls = 'sev-red';
+    else if (r.fails >= 1) dotCls = 'sev-amber';
     var mods = (r.fail_modules || []).map(function(m) {
       return '<span class="mod-tag fail">' + (MOD_SHORT[m] || m) + '</span>';
     }).join('');
     var cleanId = r.id.replace(/_data$/, '');
     return '<tr>' +
-      '<td><span class="sev-dot ' + dotCls + '" aria-hidden="true"></span>' +
-      '<span class="sr-only">[' + sevText + '] </span>' + cleanId + '</td>' +
+      '<td><span class="sev-dot ' + dotCls + '"></span>' + cleanId + '</td>' +
       '<td style="text-align:right">' + r.mas + '</td>' +
       '<td style="text-align:right">' + r.fails + '</td>' +
       '<td style="text-align:right">' + r.warns + '</td>' +

@@ -152,12 +152,20 @@ def detect_pub_bias(rma: RecomputedMA) -> DetectorResult:
         trimfill_positive,
     ])
 
+    # Also count at stricter alpha=0.05 for sensitivity reporting
+    strict_tests = sum([
+        egger_p < 0.05,
+        begg_p < 0.05,
+        trimfill_positive,
+    ])
+
     metrics = {
         "insufficient_data": False,
         "egger_p": float(egger_p),
         "begg_p": float(begg_p),
         "trimfill_k0": int(k0),
         "n_positive_tests": significant_tests,
+        "n_positive_tests_strict": strict_tests,
     }
 
     if significant_tests >= _FAIL_COUNT:

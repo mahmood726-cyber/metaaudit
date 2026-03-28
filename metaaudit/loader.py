@@ -80,6 +80,8 @@ class ReviewData:
 def split_by_analysis(df: pd.DataFrame, review_id: str = "",
                       review_doi: str | None = None,
                       review_title: str | None = None) -> list[AnalysisGroup]:
+    if len(df) == 0:
+        return []
     groups = []
     if "Analysis.number" not in df.columns:
         dtype = detect_data_type(df)
