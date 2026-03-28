@@ -69,7 +69,7 @@ with open(os.path.join(RESULTS_DIR, "prevalence.json")) as f:
 # Handle NaN from Python's json (it's not valid JSON but Python wrote it)
 prevalence = {}
 for k, v in prevalence_raw.items():
-    if v != v:  # NaN check
+    if v is None or v != v:  # None or NaN check
         prevalence[k] = None
     else:
         prevalence[k] = round(v * 100, 1)
