@@ -2,7 +2,7 @@
 
 **Background:** Meta-analyses underpin clinical guidelines, yet systematic flaws — including underpowering, model misspecification, and overclaiming — remain unquantified at scale across Cochrane evidence syntheses globally.
 
-**Objective:** To estimate the prevalence and co-occurrence of eleven computational flaw categories across 4,424 Cochrane meta-analyses derived from 501 systematic reviews.
+**Objective:** To estimate the prevalence and co-occurrence of eleven computational flaw categories across 6,229 Cochrane meta-analyses derived from 501 systematic reviews.
 
 **Methods:** We reanalyse study-level data from the Pairwise70 dataset (~50,000 RCTs) using REML random-effects models with Hartung-Knapp-Sidik-Jonkman correction. Eleven automated detectors are applied: prediction gaps, model misspecification, fragility index, underpowering, publication bias, small-study effects, excess significance, data integrity failures, study overlap, overclaiming versus MCID, and certainty-outcome mismatch. Each meta-analysis receives a severity classification of PASS, WARN, FAIL, or CRITICAL.
 
