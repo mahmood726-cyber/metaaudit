@@ -84,7 +84,8 @@ th .sort-arrow{display:inline-block;margin-left:4px;opacity:0.4;font-size:0.8rem
 th.sorted .sort-arrow{opacity:1;color:var(--accent)}
 td{padding:9px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
 tr:last-child td{border-bottom:none}
-tr:hover td{background:var(--surface2)}
+tr.data-row:hover td{background:var(--surface2);cursor:pointer}
+tr.data-row.expanded td{background:var(--surface2)}
 
 .sev-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
 .sev-green{background:var(--pass)}
@@ -95,6 +96,20 @@ tr:hover td{background:var(--surface2)}
   padding:1px 6px;font-size:0.75rem;margin:1px;color:var(--text2)}
 .mod-tag.fail{background:#3a1a1a;color:#ef9a9a;border:1px solid #5a2a2a}
 
+/* Expand row detail */
+tr.detail-row td{padding:0;border-bottom:1px solid var(--border);background:var(--surface2)}
+.detail-panel{padding:14px 18px;font-size:0.84rem}
+.detail-panel h4{color:var(--text2);font-size:0.78rem;text-transform:uppercase;
+  letter-spacing:0.07em;margin-bottom:10px}
+.detail-grid{display:flex;flex-wrap:wrap;gap:8px}
+.detail-mod{background:var(--surface3);border-radius:6px;padding:6px 10px;min-width:120px}
+.detail-mod .dm-name{font-size:0.75rem;color:var(--text2);margin-bottom:3px}
+.detail-mod .dm-sev{font-size:0.82rem;font-weight:600}
+.detail-mod.dm-fail .dm-sev{color:var(--fail)}
+.detail-mod.dm-critical .dm-sev{color:var(--crit)}
+.detail-mod.dm-warn .dm-sev{color:var(--warn)}
+.detail-mod.dm-pass .dm-sev{color:var(--pass)}
+
 /* Pagination */
 .pagination{display:flex;gap:6px;align-items:center;margin-top:14px;flex-wrap:wrap}
 .pg-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text2);
@@ -102,6 +117,18 @@ tr:hover td{background:var(--surface2)}
 .pg-btn:hover{background:var(--surface3);color:var(--text)}
 .pg-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
 .pg-btn:disabled{opacity:0.35;cursor:default}
+
+/* CSV download button */
+.btn-download{background:var(--surface2);border:1px solid var(--border);color:var(--text2);
+  padding:7px 14px;border-radius:6px;cursor:pointer;font-size:0.84rem;font-family:inherit;
+  transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn-download:hover{background:var(--surface3);color:var(--text);border-color:var(--accent)}
+
+/* Theme toggle button */
+.theme-toggle{background:none;border:1px solid var(--border);color:var(--text2);
+  border-radius:6px;padding:5px 10px;cursor:pointer;font-size:0.82rem;font-family:inherit;
+  margin-left:auto;transition:all .15s;white-space:nowrap}
+.theme-toggle:hover{border-color:var(--accent);color:var(--text)}
 
 /* About */
 .about-section{max-width:720px}
@@ -115,20 +142,52 @@ tr:hover td{background:var(--surface2)}
   border-radius:6px;padding:12px 16px;font-family:monospace;font-size:0.82rem;
   color:var(--text2);line-height:1.6;margin-top:8px}
 
-/* Heatmap tooltip */
+/* Heatmap tooltip (shared with other tooltips) */
 #hm-tooltip{position:fixed;background:var(--surface);border:1px solid var(--accent);
   border-radius:6px;padding:8px 12px;font-size:0.82rem;pointer-events:none;
   display:none;z-index:200;color:var(--text)}
+
+/* Canvas chart tooltip */
+#chart-tooltip{position:fixed;background:var(--surface);border:1px solid var(--accent2);
+  border-radius:6px;padding:10px 14px;font-size:0.82rem;pointer-events:none;
+  display:none;z-index:200;color:var(--text);line-height:1.5;max-width:240px}
+#chart-tooltip .tt-title{font-weight:600;color:var(--text);margin-bottom:4px}
+#chart-tooltip .tt-line{color:var(--text2);font-size:0.79rem}
+#chart-tooltip .tt-pct{font-size:1.05rem;font-weight:700;margin:3px 0}
 
 /* Footer */
 .app-footer{text-align:center;padding:24px;font-size:0.78rem;color:var(--text3);
   border-top:1px solid var(--border);margin-top:40px}
 
+/* ==================== LIGHT MODE ==================== */
+body.light-mode{
+  --bg:#f5f5f8;--surface:#ffffff;--surface2:#f0f0f5;--surface3:#e4e4ef;
+  --text:#1a1a2e;--text2:#505070;--text3:#808098;--border:#d0d0e0;
+}
+body.light-mode .sev-dot.sev-green{background:#388e3c}
+body.light-mode .sev-dot.sev-amber{background:#e65100}
+body.light-mode .sev-dot.sev-red{background:#c62828}
+body.light-mode .mod-tag.fail{background:#fce4e4;color:#b71c1c;border:1px solid #ef9a9a}
+body.light-mode .detail-mod{background:#e8e8f4}
+body.light-mode #chart-tooltip,
+body.light-mode #hm-tooltip{background:#fff;color:#1a1a2e}
+
+/* ==================== PRINT ==================== */
 @media print{
-  .nav,.app-header{display:none}
-  .view{display:block!important;padding:0}
-  body{background:#fff;color:#000}
-  .panel{border:1px solid #ccc}
+  .nav,.theme-toggle,.btn-download,.pagination,
+  .table-controls,.search-box,.app-header{display:none!important}
+  .view{display:block!important;padding:0;page-break-after:always}
+  .view:last-of-type{page-break-after:auto}
+  body{background:#fff!important;color:#000!important}
+  .panel{border:1px solid #ccc!important;background:#fff!important}
+  .hero-card{border:1px solid #ccc!important;background:#fff!important}
+  .callout{border:1px solid #ccc!important;background:#f8f8f8!important}
+  canvas{max-width:100%!important;height:auto!important}
+  .tbl-wrap{overflow-x:visible}
+  table{font-size:0.78rem}
+  th,td{padding:6px 8px}
+  tr.detail-row{display:none}
+  #chart-tooltip,#hm-tooltip{display:none!important}
 }
 </style>
 </head>
@@ -140,6 +199,7 @@ tr:hover td{background:var(--surface2)}
     <div class="subtitle">Computational quality audit of 6,229 Cochrane meta-analyses across 501 reviews</div>
   </div>
   <span class="badge">v1.0</span>
+  <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9788; Light mode</button>
 </header>
 
 <nav class="nav" role="navigation" aria-label="Main navigation">
@@ -200,7 +260,7 @@ tr:hover td{background:var(--surface2)}
 <section class="view" id="view-2" aria-label="Review Explorer">
   <div class="callout">
     <strong>501 Cochrane reviews</strong> sorted by severity score (FAILs &times; 2 + WARNs) by default.
-    Click column headers to sort.
+    Click column headers to sort. Click any row to expand per-module details.
     <span style="color:var(--pass)">&#9679; green</span> = no FAILs,&nbsp;
     <span style="color:var(--warn)">&#9679; amber</span> = 1&ndash;2 FAILs,&nbsp;
     <span style="color:var(--fail)">&#9679; red</span> = 3+ FAILs.
@@ -209,6 +269,9 @@ tr:hover td{background:var(--surface2)}
   <div class="table-controls">
     <input class="search-box" type="search" id="tbl-search"
            placeholder="Filter by review ID..." aria-label="Filter reviews by ID">
+    <button class="btn-download" id="csv-download-btn" onclick="downloadCSV()" aria-label="Download current view as CSV">
+      &#8675; Download CSV
+    </button>
     <span class="table-info" id="tbl-info"></span>
   </div>
 
@@ -298,6 +361,11 @@ Data: Cochrane Library open-access reviews, January 2025.
 </section>
 
 <div id="hm-tooltip" role="tooltip" aria-live="polite"></div>
+<div id="chart-tooltip" role="tooltip" aria-live="polite">
+  <div class="tt-title" id="tt-title"></div>
+  <div class="tt-pct" id="tt-pct"></div>
+  <div id="tt-lines"></div>
+</div>
 
 <footer class="app-footer">
   MetaAudit v1.0 &nbsp;&bull;&nbsp; 6,229 meta-analyses across 501 Cochrane reviews &nbsp;&bull;&nbsp;
@@ -312,9 +380,40 @@ Data: Cochrane Library open-access reviews, January 2025.
 const DATA = /*DATA_PLACEHOLDER*/;
 
 // ============================================================
+// THEME TOGGLE
+// ============================================================
+var THEME_KEY = 'metaaudit-theme';
+
+function applyTheme(theme) {
+  var isLight = (theme === 'light');
+  document.body.classList.toggle('light-mode', isLight);
+  var btn = document.getElementById('theme-btn');
+  if (btn) btn.textContent = isLight ? '\u2600 Dark mode' : '\u2600 Light mode';
+  // Re-draw charts after theme change (colors differ for some hardcoded hex values)
+  var active = document.querySelector('.view.active');
+  if (active) {
+    var idx = active.id.replace('view-', '');
+    if (idx === '0') { setTimeout(drawAll, 0); }
+    if (idx === '1') { setTimeout(drawHeatmap, 0); }
+  }
+}
+
+function toggleTheme() {
+  var current = document.body.classList.contains('light-mode') ? 'light' : 'dark';
+  var next = (current === 'dark') ? 'light' : 'dark';
+  localStorage.setItem(THEME_KEY, next);
+  applyTheme(next);
+}
+
+(function initTheme() {
+  var saved = localStorage.getItem(THEME_KEY);
+  if (saved === 'light') applyTheme('light');
+})();
+
+// ============================================================
 // NAVIGATION
 // ============================================================
-const VIEWS = ['view-0','view-1','view-2','view-3'];
+var VIEWS = ['view-0','view-1','view-2','view-3'];
 
 function showView(idx) {
   VIEWS.forEach(function(id, i) {
@@ -340,8 +439,24 @@ var SEV_COLORS = {
   INSUFF:  '#78909c'
 };
 
+function getGridColor() {
+  return document.body.classList.contains('light-mode') ? '#d0d0e0' : '#2a2a4a';
+}
+function getTextColor() {
+  return document.body.classList.contains('light-mode') ? '#1a1a2e' : '#e8e8f0';
+}
+function getText2Color() {
+  return document.body.classList.contains('light-mode') ? '#505070' : '#a0a0c0';
+}
+function getText3Color() {
+  return document.body.classList.contains('light-mode') ? '#808098' : '#606080';
+}
+function getBgColor() {
+  return document.body.classList.contains('light-mode') ? '#ffffff' : '#1a1a2e';
+}
+
 function phi2color(phi) {
-  if (phi === null || phi === undefined || isNaN(phi)) return '#1a1a2e';
+  if (phi === null || phi === undefined || isNaN(phi)) return getBgColor();
   var t = Math.max(-1, Math.min(1, phi));
   var r, g, b;
   if (t >= 0) {
@@ -355,6 +470,37 @@ function phi2color(phi) {
 
 function getFont() {
   return '"Segoe UI",system-ui,sans-serif';
+}
+
+// ============================================================
+// CHART TOOLTIP HELPERS
+// ============================================================
+var CHART_TIP = null;
+
+function showChartTip(e, titleHtml, pctHtml, linesHtml) {
+  if (!CHART_TIP) CHART_TIP = document.getElementById('chart-tooltip');
+  document.getElementById('tt-title').innerHTML = titleHtml;
+  document.getElementById('tt-pct').innerHTML = pctHtml;
+  document.getElementById('tt-lines').innerHTML = linesHtml;
+  CHART_TIP.style.display = 'block';
+  positionChartTip(e);
+}
+
+function positionChartTip(e) {
+  if (!CHART_TIP) return;
+  var x = e.clientX + 16;
+  var y = e.clientY - 10;
+  var w = CHART_TIP.offsetWidth || 200;
+  var h = CHART_TIP.offsetHeight || 80;
+  if (x + w > window.innerWidth - 8) x = e.clientX - w - 12;
+  if (y + h > window.innerHeight - 8) y = e.clientY - h - 8;
+  CHART_TIP.style.left = x + 'px';
+  CHART_TIP.style.top = y + 'px';
+}
+
+function hideChartTip() {
+  if (!CHART_TIP) CHART_TIP = document.getElementById('chart-tooltip');
+  CHART_TIP.style.display = 'none';
 }
 
 // ============================================================
@@ -390,9 +536,14 @@ function drawHeroCards() {
   }).join('');
 }
 
+// Prevalence bar chart with hover tooltips
+// Stores bar hit-regions for mousemove detection
+var prevBarRegions = [];
+
 function drawPrevalenceBar() {
   var cv = document.getElementById('cv-prevalence');
   var pr = DATA.prevalence;
+  var mb = DATA.module_breakdown;
   var labels = DATA.module_labels;
   var dpr = window.devicePixelRatio || 1;
 
@@ -417,7 +568,7 @@ function drawPrevalenceBar() {
   ctx.clearRect(0, 0, W, totalH);
 
   // Vertical grid lines + axis labels
-  ctx.strokeStyle = '#2a2a4a';
+  ctx.strokeStyle = getGridColor();
   ctx.lineWidth = 1;
   ctx.font = '10px ' + getFont();
   [0, 25, 50, 75, 100].forEach(function(pct) {
@@ -426,10 +577,13 @@ function drawPrevalenceBar() {
     ctx.moveTo(x, margin.top);
     ctx.lineTo(x, totalH - margin.bottom);
     ctx.stroke();
-    ctx.fillStyle = '#606080';
+    ctx.fillStyle = getText3Color();
     ctx.textAlign = 'center';
     ctx.fillText(pct + '%', x, totalH - margin.bottom + 12);
   });
+
+  // Build hit regions
+  prevBarRegions = [];
 
   entries.forEach(function(entry, i) {
     var mod = entry[0], pct = entry[1];
@@ -449,17 +603,62 @@ function drawPrevalenceBar() {
     ctx.fillRect(margin.left, y, bw, barH);
 
     // Module label
-    ctx.fillStyle = '#a0a0c0';
+    ctx.fillStyle = getText2Color();
     ctx.font = '12px ' + getFont();
     ctx.textAlign = 'right';
     ctx.fillText(labels[mod] || mod, margin.left - 8, y + barH / 2 + 4);
 
     // Value label
-    ctx.fillStyle = '#e8e8f0';
+    ctx.fillStyle = getTextColor();
     ctx.textAlign = 'left';
     ctx.fillText(pct.toFixed(1) + '%', margin.left + bw + 6, y + barH / 2 + 4);
+
+    // Store hit region for tooltip
+    var breakdown = (mb && mb[mod]) ? mb[mod] : null;
+    prevBarRegions.push({
+      mod: mod,
+      label: labels[mod] || mod,
+      pct: pct,
+      y0: y,
+      y1: y + barH,
+      breakdown: breakdown
+    });
   });
+
+  // Attach mouse handlers (replace each time chart redraws)
+  cv.onmousemove = function(e) {
+    var rect = cv.getBoundingClientRect();
+    var my = (e.clientY - rect.top) * (totalH / rect.height);
+    var hit = null;
+    for (var i = 0; i < prevBarRegions.length; i++) {
+      if (my >= prevBarRegions[i].y0 && my <= prevBarRegions[i].y1) {
+        hit = prevBarRegions[i];
+        break;
+      }
+    }
+    if (hit) {
+      cv.style.cursor = 'crosshair';
+      var bd = hit.breakdown;
+      var linesHtml = '';
+      if (bd) {
+        var fail = (bd.FAIL || 0);
+        var crit = (bd.CRITICAL || 0);
+        var total = (bd.PASS || 0) + (bd.WARN || 0) + fail + crit + (bd.INSUFF || 0);
+        linesHtml =
+          '<div class="tt-line">' + fail + ' FAIL + ' + crit + ' CRITICAL</div>' +
+          '<div class="tt-line">out of ' + total + ' assessed</div>';
+      }
+      showChartTip(e, hit.label, hit.pct.toFixed(1) + '%', linesHtml);
+    } else {
+      cv.style.cursor = '';
+      hideChartTip();
+    }
+  };
+  cv.onmouseleave = function() { hideChartTip(); };
 }
+
+// Donut chart with hover tooltips
+var donutSlices = [];
 
 function drawDonut() {
   var cv = document.getElementById('cv-donut');
@@ -480,22 +679,22 @@ function drawDonut() {
   var r = Math.min(cx, cy) - 18, ri = r * 0.52;
 
   var angle = -Math.PI / 2;
-  var slices = keys.map(function(k) {
+  donutSlices = keys.map(function(k) {
     var v = sevData[k];
     var sweep = (v / total) * 2 * Math.PI;
-    var slice = {key: k, value: v, pct: (v / total * 100).toFixed(1), start: angle, sweep: sweep};
+    var slice = {key: k, value: v, pct: (v / total * 100).toFixed(1), start: angle, sweep: sweep, cx: cx, cy: cy, r: r, ri: ri};
     angle += sweep;
     return slice;
   });
 
-  slices.forEach(function(s) {
+  donutSlices.forEach(function(s) {
     ctx.beginPath();
     ctx.moveTo(cx, cy);
     ctx.arc(cx, cy, r, s.start, s.start + s.sweep);
     ctx.closePath();
     ctx.fillStyle = SEV_COLORS[s.key];
     ctx.fill();
-    ctx.strokeStyle = '#0f0f1a';
+    ctx.strokeStyle = document.body.classList.contains('light-mode') ? '#f0f0f5' : '#0f0f1a';
     ctx.lineWidth = 1.5;
     ctx.stroke();
   });
@@ -503,34 +702,71 @@ function drawDonut() {
   // Inner hole
   ctx.beginPath();
   ctx.arc(cx, cy, ri, 0, 2 * Math.PI);
-  ctx.fillStyle = '#1a1a2e';
+  ctx.fillStyle = getBgColor();
   ctx.fill();
 
   // Center text
-  ctx.fillStyle = '#e8e8f0';
+  ctx.fillStyle = getTextColor();
   ctx.font = 'bold 22px ' + getFont();
   ctx.textAlign = 'center';
   ctx.fillText(total.toLocaleString(), cx, cy - 4);
-  ctx.fillStyle = '#a0a0c0';
+  ctx.fillStyle = getText2Color();
   ctx.font = '11px ' + getFont();
   ctx.fillText('detections', cx, cy + 14);
 
   // Legend (right side)
   var lx = W * 0.70, ly0 = cy - (keys.length * 24) / 2;
   keys.forEach(function(k, i) {
-    var s = slices[i];
+    var s = donutSlices[i];
     var y = ly0 + i * 28;
     ctx.fillStyle = SEV_COLORS[k];
     ctx.fillRect(lx - 16, y - 8, 12, 12);
-    ctx.fillStyle = '#a0a0c0';
+    ctx.fillStyle = getText2Color();
     ctx.font = '12px ' + getFont();
     ctx.textAlign = 'left';
     ctx.fillText(k, lx, y + 4);
-    ctx.fillStyle = '#606080';
+    ctx.fillStyle = getText3Color();
     ctx.textAlign = 'right';
     var countStr = s.value.toLocaleString() + ' (' + s.pct + '%)';
     ctx.fillText(countStr, W - 8, y + 4);
   });
+
+  // Hover detection
+  cv.onmousemove = function(e) {
+    var rect = cv.getBoundingClientRect();
+    var mx = (e.clientX - rect.left) * (W / rect.width);
+    var my = (e.clientY - rect.top) * (H / rect.height);
+    var dx = mx - cx, dy = my - cy;
+    var dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < ri || dist > r) {
+      cv.style.cursor = '';
+      hideChartTip();
+      return;
+    }
+    var ang = Math.atan2(dy, dx);
+    // Normalize to [0, 2*PI) from -PI/2 base
+    var normAng = ang + Math.PI / 2;
+    if (normAng < 0) normAng += 2 * Math.PI;
+    var hit = null;
+    for (var i = 0; i < donutSlices.length; i++) {
+      var s = donutSlices[i];
+      // Normalize slice start similarly
+      var sStart = s.start + Math.PI / 2;
+      if (sStart < 0) sStart += 2 * Math.PI;
+      var sEnd = sStart + s.sweep;
+      if (normAng >= sStart && normAng < sEnd) { hit = s; break; }
+    }
+    if (hit) {
+      cv.style.cursor = 'crosshair';
+      showChartTip(e, hit.key,
+        hit.pct + '%',
+        '<div class="tt-line">' + hit.value.toLocaleString() + ' detections</div>');
+    } else {
+      cv.style.cursor = '';
+      hideChartTip();
+    }
+  };
+  cv.onmouseleave = function() { hideChartTip(); };
 }
 
 function drawHistogram() {
@@ -568,7 +804,7 @@ function drawHistogram() {
   var BAR_COLORS = ['#4caf50', '#ffcc02', '#ff9800', '#ef5350'];
 
   // Horizontal grid lines
-  ctx.strokeStyle = '#2a2a4a';
+  ctx.strokeStyle = getGridColor();
   ctx.lineWidth = 1;
   var nGrid = 5;
   for (var g = 0; g <= nGrid; g++) {
@@ -578,7 +814,7 @@ function drawHistogram() {
     ctx.lineTo(margin.left + plotW, y);
     ctx.stroke();
     var val = Math.round((g / nGrid) * maxV);
-    ctx.fillStyle = '#606080';
+    ctx.fillStyle = getText3Color();
     ctx.font = '10px ' + getFont();
     ctx.textAlign = 'right';
     ctx.fillText(val.toLocaleString(), margin.left - 6, y + 4);
@@ -595,7 +831,7 @@ function drawHistogram() {
     ctx.fillRect(x, y, bwA, bh);
 
     // X-axis label
-    ctx.fillStyle = '#a0a0c0';
+    ctx.fillStyle = getText2Color();
     ctx.font = '11px ' + getFont();
     ctx.textAlign = 'center';
     ctx.fillText(label, x + bwA / 2, H - margin.bottom + 14);
@@ -603,12 +839,12 @@ function drawHistogram() {
     // Count label
     var countStr = val.toLocaleString();
     if (bh > 20) {
-      ctx.fillStyle = '#0a0a14';
+      ctx.fillStyle = document.body.classList.contains('light-mode') ? 'rgba(255,255,255,0.9)' : '#0a0a14';
       ctx.font = 'bold 11px ' + getFont();
       ctx.textAlign = 'center';
       ctx.fillText(countStr, x + bwA / 2, y + 15);
     } else {
-      ctx.fillStyle = '#a0a0c0';
+      ctx.fillStyle = getText2Color();
       ctx.font = '10px ' + getFont();
       ctx.textAlign = 'center';
       ctx.fillText(countStr, x + bwA / 2, y - 4);
@@ -616,7 +852,7 @@ function drawHistogram() {
   });
 
   // Axes
-  ctx.strokeStyle = '#606080';
+  ctx.strokeStyle = getText3Color();
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(margin.left, margin.top);
@@ -628,7 +864,7 @@ function drawHistogram() {
   ctx.save();
   ctx.translate(14, margin.top + plotH / 2);
   ctx.rotate(-Math.PI / 2);
-  ctx.fillStyle = '#606080';
+  ctx.fillStyle = getText3Color();
   ctx.font = '11px ' + getFont();
   ctx.textAlign = 'center';
   ctx.fillText('Number of meta-analyses', 0, 0);
@@ -658,7 +894,7 @@ function drawHeatmap() {
   var ctx = cv.getContext('2d');
   ctx.scale(dpr, dpr);
 
-  ctx.fillStyle = '#1a1a2e';
+  ctx.fillStyle = getBgColor();
   ctx.fillRect(0, 0, W, H);
 
   // Draw cells
@@ -684,7 +920,7 @@ function drawHeatmap() {
 
   // Row labels (left)
   ctx.font = '11px ' + getFont();
-  ctx.fillStyle = '#a0a0c0';
+  ctx.fillStyle = getText2Color();
   ctx.textAlign = 'right';
   for (var ri = 0; ri < n; ri++) {
     var ly = LABEL_H + ri * CELL + CELL / 2 + 4;
@@ -697,7 +933,7 @@ function drawHeatmap() {
     ctx.save();
     ctx.translate(lx, LABEL_H - 8);
     ctx.rotate(-Math.PI / 2.4);
-    ctx.fillStyle = '#a0a0c0';
+    ctx.fillStyle = getText2Color();
     ctx.font = '11px ' + getFont();
     ctx.textAlign = 'right';
     ctx.fillText(labels[mods[ci]] || mods[ci], 0, 0);
@@ -715,10 +951,10 @@ function drawHeatmap() {
   grad.addColorStop(1, 'rgb(0,0,255)');
   ctx.fillStyle = grad;
   ctx.fillRect(scaleX, scaleY, scaleW, scaleH);
-  ctx.strokeStyle = '#2a2a4a';
+  ctx.strokeStyle = getGridColor();
   ctx.lineWidth = 1;
   ctx.strokeRect(scaleX, scaleY, scaleW, scaleH);
-  ctx.fillStyle = '#a0a0c0';
+  ctx.fillStyle = getText2Color();
   ctx.font = '10px ' + getFont();
   ctx.textAlign = 'left';
   ctx.fillText('+1', scaleX + scaleW + 3, scaleY + 10);
@@ -758,6 +994,7 @@ var tblFiltered = [];
 var tblSort = {col: 4, asc: false};
 var tblPage = 1;
 var PAGE_SIZE = 50;
+var expandedRows = {};
 
 var MOD_SHORT = {
   prediction_gap: 'Pred.Gap',
@@ -773,6 +1010,20 @@ var MOD_SHORT = {
   certainty_mismatch: 'CertMism'
 };
 
+var MOD_FULL = {
+  prediction_gap: 'Prediction Gap',
+  model_misspec: 'Model Misspec.',
+  fragility: 'Fragility',
+  underpowered: 'Underpowered',
+  pub_bias: 'Publication Bias',
+  small_study: 'Small-Study Effects',
+  excess_sig: 'Excess Significance',
+  integrity: 'Integrity',
+  overlap: 'Overlap',
+  overclaiming: 'Overclaiming',
+  certainty_mismatch: 'Certainty Mismatch'
+};
+
 function initTable() {
   if (tblData.length > 0) { renderTable(); return; }
   tblData = DATA.reviews.slice();
@@ -786,6 +1037,7 @@ function initTable() {
       ? tblData.filter(function(r) { return r.id.toLowerCase().indexOf(q) !== -1; })
       : tblData.slice();
     tblPage = 1;
+    expandedRows = {};
     sortTableData();
     renderTable();
   });
@@ -799,6 +1051,7 @@ function sortTable(col) {
     tblSort.asc = (col === 0);
   }
   tblPage = 1;
+  expandedRows = {};
   sortTableData();
   renderTable();
 }
@@ -819,6 +1072,32 @@ function sortTableData() {
   });
 }
 
+function toggleRowExpand(rowId) {
+  expandedRows[rowId] = !expandedRows[rowId];
+  renderTable();
+}
+
+function buildDetailPanel(r) {
+  var failMods = r.fail_modules || [];
+  var allModKeys = Object.keys(MOD_SHORT);
+  // Show failed modules with severity, then a summary line
+  var modItems = allModKeys.map(function(k) {
+    var isFail = failMods.indexOf(k) !== -1;
+    var sev = isFail ? (r.fails >= 1 ? 'FAIL' : 'WARN') : 'PASS';
+    // Use CRITICAL label for high-severity reviews (score > 10 and this is a fail)
+    if (isFail && r.severity_score > 10) sev = 'CRITICAL';
+    var cls = 'dm-' + sev.toLowerCase();
+    return '<div class="detail-mod ' + cls + '">' +
+      '<div class="dm-name">' + (MOD_FULL[k] || k) + '</div>' +
+      '<div class="dm-sev">' + sev + '</div>' +
+      '</div>';
+  });
+  return '<div class="detail-panel">' +
+    '<h4>Module severity profile for ' + r.id.replace(/_data$/, '') + '</h4>' +
+    '<div class="detail-grid">' + modItems.join('') + '</div>' +
+    '</div>';
+}
+
 function renderTable() {
   var body = document.getElementById('tbl-body');
   var total = tblFiltered.length;
@@ -830,7 +1109,8 @@ function renderTable() {
     'Showing ' + (start + 1) + '\u2013' + Math.min(start + PAGE_SIZE, total) +
     ' of ' + total + ' reviews';
 
-  body.innerHTML = slice.map(function(r) {
+  var rows = [];
+  slice.forEach(function(r) {
     var dotCls = 'sev-green';
     var sevText = 'PASS';
     if (r.fails >= 3) { dotCls = 'sev-red'; sevText = 'HIGH'; }
@@ -839,7 +1119,8 @@ function renderTable() {
       return '<span class="mod-tag fail">' + (MOD_SHORT[m] || m) + '</span>';
     }).join('');
     var cleanId = r.id.replace(/_data$/, '');
-    return '<tr>' +
+    var isExp = !!expandedRows[r.id];
+    rows.push('<tr class="data-row' + (isExp ? ' expanded' : '') + '" onclick="toggleRowExpand(\'' + r.id.replace(/'/g, "\\'") + '\')" role="button" aria-expanded="' + (isExp ? 'true' : 'false') + '" tabindex="0" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){toggleRowExpand(\'' + r.id.replace(/'/g, "\\'") + '\');event.preventDefault()}">' +
       '<td><span class="sev-dot ' + dotCls + '" aria-hidden="true"></span>' +
       '<span class="sr-only">[' + sevText + '] </span>' + cleanId + '</td>' +
       '<td style="text-align:right">' + r.mas + '</td>' +
@@ -847,8 +1128,12 @@ function renderTable() {
       '<td style="text-align:right">' + r.warns + '</td>' +
       '<td style="text-align:right">' + r.severity_score + '</td>' +
       '<td>' + mods + '</td>' +
-      '</tr>';
-  }).join('');
+      '</tr>');
+    if (isExp) {
+      rows.push('<tr class="detail-row"><td colspan="6">' + buildDetailPanel(r) + '</td></tr>');
+    }
+  });
+  body.innerHTML = rows.join('');
 
   // Update sort arrows
   document.querySelectorAll('#reviews-table th').forEach(function(th, i) {
@@ -885,8 +1170,43 @@ function renderTable() {
 function goPage(p) {
   var pages = Math.ceil(tblFiltered.length / PAGE_SIZE);
   tblPage = Math.max(1, Math.min(p, pages));
+  expandedRows = {};
   renderTable();
   document.querySelector('.tbl-wrap').scrollIntoView({behavior: 'smooth', block: 'nearest'});
+}
+
+// ============================================================
+// CSV EXPORT
+// ============================================================
+function escCsv(val) {
+  var s = String(val === null || val === undefined ? '' : val);
+  // Guard formula injection (exclude '-' to avoid corrupting negative values)
+  if (/^[=+@\t\r]/.test(s)) s = "'" + s;
+  if (s.indexOf(',') !== -1 || s.indexOf('"') !== -1 || s.indexOf('\n') !== -1) {
+    s = '"' + s.replace(/"/g, '""') + '"';
+  }
+  return s;
+}
+
+function downloadCSV() {
+  var header = ['Review ID','# MAs','# FAILs','# WARNs','Score','Failed Modules'];
+  var lines = [header.map(escCsv).join(',')];
+  tblFiltered.forEach(function(r) {
+    var cleanId = r.id.replace(/_data$/, '');
+    var mods = (r.fail_modules || []).join('; ');
+    lines.push([cleanId, r.mas, r.fails, r.warns, r.severity_score, mods].map(escCsv).join(','));
+  });
+  var csv = lines.join('\r\n');
+  var blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'metaaudit-reviews.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  // Revoke after short delay to let browser initiate download
+  setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
 }
 
 // ============================================================
@@ -905,4 +1225,3 @@ window.addEventListener('resize', function() {
 });
 </script>
 </body>
-</html>
