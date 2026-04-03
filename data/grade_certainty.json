@@ -1,0 +1,6 @@
+{
+  "_format": "Map of review_id -> analysis_number -> GRADE certainty level",
+  "_values": "high | moderate | low | very low",
+  "_source": "Manually curated from Cochrane Summary of Findings tables",
+  "_instructions": "Add entries by review CD number and analysis number. Use lowercase GRADE levels."
+}

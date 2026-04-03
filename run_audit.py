@@ -33,12 +33,34 @@ import pandas as pd
 
 DEFAULT_DATA_DIR = r"C:\Users\user\OneDrive - NHS\Documents\Pairwise70\data"
 DEFAULT_OUTPUT_DIR = r"C:\MetaAudit\results"
+DEFAULT_GRADE_FILE = r"C:\MetaAudit\data\grade_certainty.json"
 
 
-def run_detectors_on_analysis(ag, ma, study_data, overlap_result):
+def load_grade_data(grade_file: str) -> dict[str, dict[str, str]]:
+    """Load GRADE certainty ratings from JSON file.
+
+    Returns dict: review_id -> {analysis_number_str -> grade_level}.
+    Keys starting with '_' are metadata and are skipped.
+    """
+    if not os.path.exists(grade_file):
+        return {}
+    with open(grade_file) as f:
+        raw = json.load(f)
+    return {k: v for k, v in raw.items() if not k.startswith("_") and isinstance(v, dict)}
+
+
+def lookup_grade(grade_data: dict, review_id: str, analysis_number: int) -> str | None:
+    """Look up GRADE certainty for a specific analysis."""
+    review_grades = grade_data.get(review_id, {})
+    return review_grades.get(str(analysis_number))
+
+
+def run_detectors_on_analysis(ag, ma, study_data, overlap_result,
+                              grade_certainty=None):
     """Run all detectors for one analysis group.
 
     overlap_result: pre-computed DetectorResult for this review's overlap check.
+    grade_certainty: GRADE certainty level (high/moderate/low/very low) or None.
     """
     results = []
     results.append(detect_prediction_gap(ma))
@@ -63,7 +85,7 @@ def run_detectors_on_analysis(ag, ma, study_data, overlap_result):
     results.append(overlap_result)
     results.append(detect_overclaiming(ma))
     results.append(detect_certainty_mismatch(
-        grade_certainty=None,
+        grade_certainty=grade_certainty,
         other_results=results[:10],
     ))
     return results
@@ -77,6 +99,8 @@ def main():
                         help="Output directory for results")
     parser.add_argument("--max-reviews", type=int, default=None,
                         help="Limit number of reviews (for testing)")
+    parser.add_argument("--grade-file", default=DEFAULT_GRADE_FILE,
+                        help="Path to GRADE certainty JSON file")
     args = parser.parse_args()
 
     os.makedirs(args.output_dir, exist_ok=True)
@@ -96,6 +120,14 @@ def main():
     overlap_index = build_overlap_index(studies_by_review)
     print(f"Found {len(overlap_index)} review pairs with shared studies")
 
+    # Load GRADE certainty data
+    grade_data = load_grade_data(args.grade_file)
+    n_grade = sum(len(v) for v in grade_data.values())
+    if n_grade > 0:
+        print(f"Loaded GRADE certainty for {n_grade} analyses across {len(grade_data)} reviews")
+    else:
+        print("No GRADE certainty data available (certainty_mismatch detector will report INSUFF)")
+
     # Pre-compute overlap result once per review (not once per MA)
     overlap_cache: dict[str, DetectorResult] = {}
     for r in reviews:
@@ -111,8 +143,10 @@ def main():
         for ag in review.analyses:
             ma = recompute_ma(ag.df, ag.data_type)
             study_data = ag.df if ag.data_type == DataType.BINARY else None
+            grade = lookup_grade(grade_data, ag.review_id, ag.analysis_number)
             results = run_detectors_on_analysis(
-                ag, ma, study_data, overlap_cache[ag.review_id]
+                ag, ma, study_data, overlap_cache[ag.review_id],
+                grade_certainty=grade,
             )
             all_results[ag.ma_id] = results
             done += 1
