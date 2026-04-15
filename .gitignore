@@ -6,3 +6,9 @@ results/
 dist/
 build/
 .venv/
+
+# Session output (Sentinel / Overmind)
+review-findings.md
+STUCK_FAILURES.md
+DECISIONS.md
+PROGRESS.md
