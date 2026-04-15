@@ -4,6 +4,7 @@
 import os
 import json
 import tempfile
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
@@ -116,17 +117,33 @@ def test_full_pipeline_export():
         assert len(prev) > 0
 
 
-PAIRWISE70_DIR = r"C:\Users\user\OneDrive - NHS\Documents\Pairwise70\data"
+def _pairwise70_dir():
+    env_data = os.getenv("METAAUDIT_DATA_DIR") or os.getenv("PAIRWISE70_DATA_DIR")
+    candidates = []
+    if env_data:
+        candidates.append(Path(env_data).expanduser())
+    project_root = Path(__file__).resolve().parents[1]
+    candidates.extend([
+        project_root.parent / "Projects" / "Pairwise70" / "data",
+        project_root.parent / "Models" / "Pairwise70" / "data",
+    ])
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return None
+
+
+PAIRWISE70_DIR = _pairwise70_dir()
 
 
 @pytest.mark.skipif(
-    not os.path.exists(PAIRWISE70_DIR),
+    PAIRWISE70_DIR is None or not PAIRWISE70_DIR.exists(),
     reason="Pairwise70 data not available"
 )
 def test_real_review_cd000028():
     """Run full pipeline on a real Cochrane review."""
     from metaaudit.loader import load_rda_file
-    path = os.path.join(PAIRWISE70_DIR, "CD000028_pub4_data.rda")
+    path = PAIRWISE70_DIR / "CD000028_pub4_data.rda"
     review = load_rda_file(path)
     assert len(review.analyses) > 0
     ag = review.analyses[0]

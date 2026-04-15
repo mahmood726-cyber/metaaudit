@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import pytest
+from pathlib import Path
 from metaaudit.loader import (
     load_rda_file,
     detect_data_type,
@@ -10,8 +11,24 @@ from metaaudit.loader import (
 )
 
 
-PAIRWISE70_DIR = r"C:\Users\user\OneDrive - NHS\Documents\Pairwise70\data"
-SAMPLE_RDA = os.path.join(PAIRWISE70_DIR, "CD000028_pub4_data.rda")
+def _pairwise70_dir():
+    env_data = os.getenv("METAAUDIT_DATA_DIR") or os.getenv("PAIRWISE70_DATA_DIR")
+    candidates = []
+    if env_data:
+        candidates.append(Path(env_data).expanduser())
+    project_root = Path(__file__).resolve().parents[1]
+    candidates.extend([
+        project_root.parent / "Projects" / "Pairwise70" / "data",
+        project_root.parent / "Models" / "Pairwise70" / "data",
+    ])
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return None
+
+
+PAIRWISE70_DIR = _pairwise70_dir()
+SAMPLE_RDA = (PAIRWISE70_DIR / "CD000028_pub4_data.rda") if PAIRWISE70_DIR else None
 
 
 def test_detect_binary(binary_study_data):
@@ -32,7 +49,7 @@ def test_split_by_analysis(multi_analysis_data):
 
 
 @pytest.mark.skipif(
-    not os.path.exists(SAMPLE_RDA),
+    SAMPLE_RDA is None or not SAMPLE_RDA.exists(),
     reason="Pairwise70 data not available"
 )
 def test_load_real_rda():
@@ -44,7 +61,7 @@ def test_load_real_rda():
 
 
 @pytest.mark.skipif(
-    not os.path.exists(PAIRWISE70_DIR),
+    PAIRWISE70_DIR is None or not PAIRWISE70_DIR.exists(),
     reason="Pairwise70 data not available"
 )
 def test_load_all_reviews_sample():

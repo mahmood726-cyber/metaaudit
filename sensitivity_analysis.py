@@ -17,6 +17,7 @@ from __future__ import annotations
 import io
 import json
 import math
+import os
 import sys
 from pathlib import Path
 
@@ -28,10 +29,25 @@ from scipy import stats
 # ---------------------------------------------------------------------------
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
-AUDIT_JSON = Path("C:/MetaAudit/results/audit_results.json")
-OUTPUT_MD   = Path("C:/MetaAudit/results/sensitivity_results.md")
-OUTPUT_JSON = Path("C:/MetaAudit/results/sensitivity_data.json")
-DATA_DIR    = Path(r"C:\Users\user\OneDrive - NHS\Documents\Pairwise70\data")
+PROJECT_ROOT = Path(__file__).resolve().parent
+
+
+def _resolve_pairwise_dir():
+    env_data = os.getenv("METAAUDIT_DATA_DIR") or os.getenv("PAIRWISE70_DATA_DIR")
+    candidates = []
+    if env_data:
+        candidates.append(Path(env_data).expanduser())
+    candidates.extend([
+        PROJECT_ROOT.parent / "Projects" / "Pairwise70" / "data",
+        PROJECT_ROOT.parent / "Models" / "Pairwise70" / "data",
+    ])
+    return next((path.resolve() for path in candidates if path.exists()), candidates[0].resolve())
+
+
+AUDIT_JSON = PROJECT_ROOT / "results" / "audit_results.json"
+OUTPUT_MD = PROJECT_ROOT / "results" / "sensitivity_results.md"
+OUTPUT_JSON = PROJECT_ROOT / "results" / "sensitivity_data.json"
+DATA_DIR = _resolve_pairwise_dir()
 
 # ---------------------------------------------------------------------------
 # Load audit results

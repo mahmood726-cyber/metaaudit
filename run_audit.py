@@ -7,6 +7,7 @@ import json
 import os
 import sys
 import time
+from pathlib import Path
 
 import numpy as np
 
@@ -31,9 +32,8 @@ from metaaudit.correlator import (
 from metaaudit.export import export_json, export_csv
 import pandas as pd
 
-DEFAULT_DATA_DIR = r"C:\Users\user\OneDrive - NHS\Documents\Pairwise70\data"
-DEFAULT_OUTPUT_DIR = r"C:\MetaAudit\results"
-DEFAULT_GRADE_FILE = r"C:\MetaAudit\data\grade_certainty.json"
+PROJECT_ROOT = Path(__file__).resolve().parent
+DEFAULT_PROJECTS_ROOT = PROJECT_ROOT.parent
 
 
 def load_grade_data(grade_file: str) -> dict[str, dict[str, str]]:
@@ -91,23 +91,63 @@ def run_detectors_on_analysis(ag, ma, study_data, overlap_result,
     return results
 
 
+def resolve_paths(project_root=None, projects_root=None, data_dir=None, output_dir=None, grade_file=None):
+    project_root = Path(project_root).resolve() if project_root else PROJECT_ROOT
+    projects_root = Path(projects_root).resolve() if projects_root else project_root.parent
+
+    data_candidates = []
+    if data_dir:
+        data_candidates.append(Path(data_dir).expanduser())
+    env_data = os.getenv("METAAUDIT_DATA_DIR") or os.getenv("PAIRWISE70_DATA_DIR")
+    if env_data:
+        data_candidates.append(Path(env_data).expanduser())
+    data_candidates.extend([
+        projects_root / "Projects" / "Pairwise70" / "data",
+        projects_root / "Models" / "Pairwise70" / "data",
+    ])
+    resolved_data = next((path.resolve() for path in data_candidates if path.exists()), data_candidates[0].resolve())
+
+    resolved_output = Path(output_dir).resolve() if output_dir else project_root / "results"
+    resolved_grade = Path(grade_file).resolve() if grade_file else project_root / "data" / "grade_certainty.json"
+    return {
+        "data_dir": resolved_data,
+        "output_dir": resolved_output,
+        "grade_file": resolved_grade,
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description="MetaAudit — Computational Evidence Audit")
-    parser.add_argument("--data-dir", default=DEFAULT_DATA_DIR,
+    parser.add_argument("--data-dir", default=None,
                         help="Path to Pairwise70 data directory")
-    parser.add_argument("--output-dir", default=DEFAULT_OUTPUT_DIR,
+    parser.add_argument("--output-dir", default=None,
                         help="Output directory for results")
     parser.add_argument("--max-reviews", type=int, default=None,
                         help="Limit number of reviews (for testing)")
-    parser.add_argument("--grade-file", default=DEFAULT_GRADE_FILE,
+    parser.add_argument("--grade-file", default=None,
                         help="Path to GRADE certainty JSON file")
     args = parser.parse_args()
 
-    os.makedirs(args.output_dir, exist_ok=True)
+    paths = resolve_paths(
+        data_dir=args.data_dir,
+        output_dir=args.output_dir,
+        grade_file=args.grade_file,
+    )
+    data_dir = paths["data_dir"]
+    output_dir = paths["output_dir"]
+    grade_file = paths["grade_file"]
 
-    print(f"Loading reviews from {args.data_dir}...")
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"Loading reviews from {data_dir}...")
     t0 = time.time()
-    reviews = load_all_reviews(args.data_dir, max_reviews=args.max_reviews)
+    if not data_dir.exists():
+        print(f"ERROR: Pairwise70 data directory not found: {data_dir}")
+        return None
+    reviews = load_all_reviews(data_dir, max_reviews=args.max_reviews)
+    if not reviews:
+        print(f"ERROR: No reviews loaded from {data_dir}")
+        return None
     print(f"Loaded {len(reviews)} reviews in {time.time() - t0:.1f}s")
 
     print("Building study overlap index...")
@@ -121,7 +161,7 @@ def main():
     print(f"Found {len(overlap_index)} review pairs with shared studies")
 
     # Load GRADE certainty data
-    grade_data = load_grade_data(args.grade_file)
+    grade_data = load_grade_data(grade_file)
     n_grade = sum(len(v) for v in grade_data.values())
     if n_grade > 0:
         print(f"Loaded GRADE certainty for {n_grade} analyses across {len(grade_data)} reviews")
@@ -136,6 +176,9 @@ def main():
 
     all_results: dict[str, list[DetectorResult]] = {}
     total_analyses = sum(len(r.analyses) for r in reviews)
+    if total_analyses == 0:
+        print("ERROR: Loaded reviews contained no analyses; aborting.")
+        return None
     print(f"Running 11 detectors on {total_analyses} meta-analyses...")
 
     done = 0
@@ -181,21 +224,22 @@ def main():
             print(f"  {module:25s} N/A")
     print(f"{'='*60}")
 
-    json_path = os.path.join(args.output_dir, "audit_results.json")
-    csv_path = os.path.join(args.output_dir, "audit_results.csv")
+    json_path = output_dir / "audit_results.json"
+    csv_path = output_dir / "audit_results.csv"
     export_json(all_results, json_path)
     export_csv(all_results, csv_path)
 
-    prevalence_path = os.path.join(args.output_dir, "prevalence.json")
+    prevalence_path = output_dir / "prevalence.json"
     with open(prevalence_path, "w") as f:
         # Replace NaN with None so output is valid JSON
         clean_prev = {k: (v if v == v else None) for k, v in prevalence.items()}
         json.dump(clean_prev, f, indent=2)
 
-    cooccurrence.to_csv(os.path.join(args.output_dir, "cooccurrence.csv"))
+    cooccurrence.to_csv(output_dir / "cooccurrence.csv")
 
-    print(f"\nResults saved to {args.output_dir}/")
+    print(f"\nResults saved to {output_dir}/")
     print("Done.")
+    return output_dir
 
 
 if __name__ == "__main__":

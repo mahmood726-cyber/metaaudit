@@ -16,19 +16,33 @@ import subprocess
 import sys
 import tempfile
 import math
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 # ── path setup ──────────────────────────────────────────────────────────────
-sys.path.insert(0, r"C:\MetaAudit")
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT))
 from metaaudit.loader import load_rda_file, DataType
 from metaaudit.recompute import recompute_ma, compute_log_or, compute_prediction_interval
 
-DATA_DIR   = r"C:\Users\user\OneDrive - NHS\Documents\Pairwise70\data"
-R_SCRIPT   = r"C:\MetaAudit\validation\metafor_validate.R"
-RSCRIPT    = r"C:\Program Files\R\R-4.5.2\bin\Rscript.exe"
-OUTPUT_DIR = r"C:\MetaAudit\validation"
+def _resolve_pairwise_dir():
+    env_data = os.getenv("METAAUDIT_DATA_DIR") or os.getenv("PAIRWISE70_DATA_DIR")
+    candidates = []
+    if env_data:
+        candidates.append(Path(env_data).expanduser())
+    candidates.extend([
+        PROJECT_ROOT.parent / "Projects" / "Pairwise70" / "data",
+        PROJECT_ROOT.parent / "Models" / "Pairwise70" / "data",
+    ])
+    return next((path.resolve() for path in candidates if path.exists()), candidates[0].resolve())
+
+
+DATA_DIR = _resolve_pairwise_dir()
+R_SCRIPT = PROJECT_ROOT / "validation" / "metafor_validate.R"
+RSCRIPT = r"C:\Program Files\R\R-4.5.2\bin\Rscript.exe"
+OUTPUT_DIR = PROJECT_ROOT / "validation"
 N_REVIEWS  = 10
 
 # ── tolerances ───────────────────────────────────────────────────────────────
@@ -61,7 +75,7 @@ def run_r(csv_path: str) -> dict | None:
     """Call Rscript and parse key=value output. Returns None on failure."""
     try:
         result = subprocess.run(
-            [RSCRIPT, "--no-save", "--no-restore", R_SCRIPT, csv_path],
+            [RSCRIPT, "--no-save", "--no-restore", str(R_SCRIPT), csv_path],
             capture_output=True, text=True, timeout=120
         )
         if result.returncode != 0:
@@ -92,7 +106,7 @@ def select_reviews() -> list[dict]:
     for fname in files:
         if len(selected) >= N_REVIEWS:
             break
-        path = os.path.join(DATA_DIR, fname)
+        path = DATA_DIR / fname
         try:
             rv = load_rda_file(path)
         except Exception as e:
@@ -338,11 +352,11 @@ def main():
         all_rows.extend(rows)
         summary["reviews"].append(review_id)
 
-    out_path = os.path.join(OUTPUT_DIR, "cross_validation_results.md")
+    out_path = OUTPUT_DIR / "cross_validation_results.md"
     write_report(all_rows, summary, out_path)
 
     # Also write a machine-readable CSV of all comparisons
-    csv_path = os.path.join(OUTPUT_DIR, "cross_validation_results.csv")
+    csv_path = OUTPUT_DIR / "cross_validation_results.csv"
     pd.DataFrame(all_rows).to_csv(csv_path, index=False)
     print(f"CSV saved to {csv_path}")
 
