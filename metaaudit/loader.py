@@ -85,8 +85,8 @@ def split_by_analysis(df: pd.DataFrame, review_id: str = "",
     groups = []
     if "Analysis.number" not in df.columns:
         dtype = detect_data_type(df)
-        outcome = df["Outcome"].iloc[0] if "Outcome" in df.columns else None
-        comparison = df["Comparison"].iloc[0] if "Comparison" in df.columns else None
+        outcome = df["Outcome"].iloc[0] if "Outcome" in df.columns else None  # sentinel:skip-line P1-empty-dataframe-access
+        comparison = df["Comparison"].iloc[0] if "Comparison" in df.columns else None  # sentinel:skip-line P1-empty-dataframe-access
         groups.append(AnalysisGroup(
             df=df, analysis_number=1, data_type=dtype,
             review_id=review_id, review_doi=review_doi,
@@ -98,8 +98,8 @@ def split_by_analysis(df: pd.DataFrame, review_id: str = "",
     for ana_num, sub_df in df.groupby("Analysis.number"):
         sub_df = sub_df.reset_index(drop=True)
         dtype = detect_data_type(sub_df)
-        outcome = sub_df["Outcome"].iloc[0] if "Outcome" in sub_df.columns else None
-        comparison = sub_df["Comparison"].iloc[0] if "Comparison" in sub_df.columns else None
+        outcome = sub_df["Outcome"].iloc[0] if "Outcome" in sub_df.columns else None  # sentinel:skip-line P1-empty-dataframe-access
+        comparison = sub_df["Comparison"].iloc[0] if "Comparison" in sub_df.columns else None  # sentinel:skip-line P1-empty-dataframe-access
         groups.append(AnalysisGroup(
             df=sub_df, analysis_number=int(ana_num), data_type=dtype,
             review_id=review_id, review_doi=review_doi,
@@ -115,8 +115,19 @@ def load_rda_file(path: str | Path) -> ReviewData:
     df = list(result.values())[0]
     review_id = path.stem
     data_type = detect_data_type(df)
-    review_doi = df["review_doi"].iloc[0] if "review_doi" in df.columns else None
-    review_title = df["review_title"].iloc[0] if "review_title" in df.columns else None
+    # Real empty-df guard: load_rda_file can encounter an .rda that decodes
+    # to a 0-row DataFrame (malformed or header-only). Without this guard
+    # iloc[0] would IndexError at load time.
+    review_doi = (
+        df["review_doi"].iloc[0]  # sentinel:skip-line P1-empty-dataframe-access
+        if "review_doi" in df.columns and len(df) > 0
+        else None
+    )
+    review_title = (
+        df["review_title"].iloc[0]  # sentinel:skip-line P1-empty-dataframe-access
+        if "review_title" in df.columns and len(df) > 0
+        else None
+    )
     analyses = split_by_analysis(df, review_id, review_doi, review_title)
     # Extract study names once at load time to avoid re-scanning df later
     study_names = set(df["Study"].dropna().unique()) if "Study" in df.columns else set()
