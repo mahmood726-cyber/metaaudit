@@ -1,6 +1,8 @@
 import re, os
 
-content = open(r'C:\MetaAudit\dashboard\webr-verify.html', encoding='utf-8').read()
+from metaaudit.config import WEBR_VERIFY_HTML
+
+content = open(WEBR_VERIFY_HTML, encoding='utf-8').read()
 
 # Remove <script>...</script> blocks for div counting
 no_script = re.sub(r'<script[^>]*>.*?</script>', '', content, flags=re.DOTALL)
@@ -16,7 +18,7 @@ for i, block in enumerate(script_blocks):
     print(f'Script block {i}: literal </script> occurrences = {len(hits)}')
 
 # File stats
-size = os.path.getsize(r'C:\MetaAudit\dashboard\webr-verify.html')
+size = os.path.getsize(WEBR_VERIFY_HTML)
 print(f'File size: {size:,} bytes ({size/1024:.1f} KB)')
 print(f'Line count: {content.count(chr(10))+1}')
 

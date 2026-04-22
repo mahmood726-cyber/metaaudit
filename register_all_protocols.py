@@ -20,6 +20,8 @@ import datetime
 import textwrap
 from pathlib import Path
 
+from metaaudit.config import PROTOCOL_LOG
+
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
@@ -57,7 +59,7 @@ SINGLE_DIR_REPOS = {
 SKIP_REPOS = {"C:/MetaAudit"}
 
 PREREGISTRATION_TAG = "v0.1.0-preregistration"
-LOG_PATH = Path("C:/MetaAudit/protocol-registration-log.md")
+LOG_PATH = PROTOCOL_LOG
 
 AI_DISCLOSURE = """**AI Disclosure Statement**
 

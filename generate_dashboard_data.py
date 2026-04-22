@@ -5,7 +5,9 @@ import os
 import math
 from collections import Counter, defaultdict
 
-RESULTS_DIR = r"C:\MetaAudit\results"
+from metaaudit.config import RESULTS_DIR as _RESULTS_DIR
+
+RESULTS_DIR = str(_RESULTS_DIR)
 
 print("Loading audit_results.json...")
 with open(os.path.join(RESULTS_DIR, "audit_results.json")) as f:

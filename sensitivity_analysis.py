@@ -8,8 +8,9 @@ MetaAudit — Pre-Registered Sensitivity Analyses
   SA4: Compare REML tau² vs DL tau² (first 100 MAs)
 
 Results saved to:
-  C:/MetaAudit/results/sensitivity_results.md
-  C:/MetaAudit/results/sensitivity_data.json
+  results/sensitivity_results.md
+  results/sensitivity_data.json
+(paths relative to the repository root; see metaaudit.config)
 """
 
 from __future__ import annotations
@@ -366,7 +367,7 @@ print("\nSA4: REML vs DL tau2 comparison (first 100 MAs)...")
 # Need to recompute from raw data.
 # Import MetaAudit pipeline components.
 import sys
-sys.path.insert(0, "C:/MetaAudit")
+sys.path.insert(0, str(PROJECT_ROOT))
 from metaaudit.loader import load_all_reviews, DataType
 from metaaudit.recompute import _extract_effects, _reml_tau2
 

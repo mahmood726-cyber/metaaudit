@@ -6,7 +6,7 @@ in both Python (HKSJ) and R (normal-theory + HKSJ), and reports
 agreement statistics.
 
 Usage:
-    python C:/MetaAudit/validation/cross_validate.py
+    python validation/cross_validate.py  # run from repo root
 """
 from __future__ import annotations
 

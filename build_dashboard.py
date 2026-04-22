@@ -1,9 +1,11 @@
 """Assemble dashboard HTML by embedding dashboard_data.json into the template."""
 import json, os, sys
 
-data_path = r"C:\MetaAudit\results\dashboard_data.json"
-template_path = r"C:\MetaAudit\dashboard\index.template.html"
-out_path = r"C:\MetaAudit\dashboard\index.html"
+from metaaudit.config import DASHBOARD_DATA, DASHBOARD_TEMPLATE, DASHBOARD_INDEX
+
+data_path = DASHBOARD_DATA
+template_path = DASHBOARD_TEMPLATE
+out_path = DASHBOARD_INDEX
 
 data_json = open(data_path, encoding="utf-8").read()
 template = open(template_path, encoding="utf-8").read()
