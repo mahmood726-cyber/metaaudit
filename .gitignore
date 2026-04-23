@@ -10,5 +10,8 @@ build/
 # Session output (Sentinel / Overmind)
 review-findings.md
 STUCK_FAILURES.md
+STUCK_FAILURES.jsonl
+sentinel-findings.md
+sentinel-findings.jsonl
 DECISIONS.md
 PROGRESS.md
