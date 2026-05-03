@@ -14,6 +14,7 @@ Author: Mahmood Ahmad
 import os
 import sys
 import re
+import shlex
 import subprocess
 import argparse
 import datetime
@@ -672,11 +673,18 @@ DESCRIPTION_OVERRIDES = {
 
 
 def run(cmd, cwd=None, capture=True):
-    """Run a shell command. Returns (returncode, stdout, stderr)."""
+    """Run a command. Returns (returncode, stdout, stderr).
+
+    `cmd` may be a list of args (preferred) or a string (tokenised via
+    shlex.split). shell=False prevents injection if any interpolated value
+    ever gains an attacker-controlled apostrophe / quote / backtick.
+    """
+    if isinstance(cmd, str):
+        cmd = shlex.split(cmd, posix=True)
     result = subprocess.run(
         cmd,
         cwd=cwd,
-        shell=True,
+        shell=False,
         capture_output=capture,
         text=True,
         encoding="utf-8",
