@@ -193,19 +193,19 @@ One-third of Cochrane meta-analyses exhibit computationally detectable flaws at 
 
 3. Turner EH, Matthews AM, Linardatos E, Tell RA, Rosenthal R. Selective publication of antidepressant trials and its influence on apparent efficacy. *N Engl J Med*. 2008;358(3):252-260.
 
-4. Walsh M, Srinathan SK, McAuley DF, et al. The statistical significance of randomized controlled trial results is frequently fragile. *J Clin Epidemiol*. 2014;67(6):622-628.
+4. Walsh M, Srinathan SK, McAuley DF, et al. The statistical significance of randomized controlled trial results is frequently fragile. *J Clin Epidemiol*. 2014;67(6):622-628. doi:10.1016/j.jclinepi.2013.10.019
 
 5. Hedges LV, Pigott TD. The power of statistical tests in meta-analysis. *Psychol Methods*. 2001;6(3):203-217.
 
 6. Ioannidis JPA. Why most clinical research is not useful. *PLoS Med*. 2016;13(6):e1002049.
 
-7. Page MJ, Shamseer L, Altman DG, et al. Epidemiology and reporting characteristics of systematic reviews of biomedical research. *PLoS Med*. 2016;13(5):e1002028.
+7. Page MJ, Shamseer L, Altman DG, et al. Epidemiology and reporting characteristics of systematic reviews of biomedical research. *PLoS Med*. 2016;13(5):e1002028. doi:10.1371/journal.pmed.1002028
 
 8. Hartung J, Knapp G. A refined method for the meta-analysis of controlled clinical trials with binary outcome. *Stat Med*. 2001;20(24):3875-3889.
 
-9. Guyatt G, Oxman AD, Akl EA, et al. GRADE guidelines: 1. Introduction. *J Clin Epidemiol*. 2011;64(4):383-394.
+9. Guyatt G, Oxman AD, Akl EA, et al. GRADE guidelines: 1. Introduction—GRADE evidence profiles and summary of findings tables. *J Clin Epidemiol*. 2011;64(4):383-394. doi:10.1016/j.jclinepi.2010.04.026
 
-10. Shea BJ, Reeves BC, Wells G, et al. AMSTAR 2: a critical appraisal tool for systematic reviews. *BMJ*. 2017;358:j4008.
+10. Shea BJ, Reeves BC, Wells G, et al. AMSTAR 2: a critical appraisal tool for systematic reviews that include randomised or non-randomised studies of healthcare interventions, or both. *BMJ*. 2017;358:j4008. doi:10.1136/bmj.j4008
 
 ---
 

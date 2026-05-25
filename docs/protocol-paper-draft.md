@@ -160,7 +160,7 @@ The scope of this audit is restricted to Cochrane reviews represented in the Pai
 
 ## 6. Expected Impact
 
-If systematic flaw co-occurrence is confirmed — for example, that underpowered meta-analyses are also more likely to be fragile and to show evidence of small-study effects — this would provide quantitative justification for multi-criterion quality filters in evidence grading systems such as GRADE. The openly released severity dashboard would allow guideline developers to query any Cochrane meta-analysis in the corpus and retrieve its automated flaw profile before incorporating its findings into a recommendation. This represents a scalable, reproducible approach to evidence quality surveillance that complements existing qualitative tools such as AMSTAR-2.
+If systematic flaw co-occurrence is observed — for example, that underpowered meta-analyses are also more likely to be fragile and to show evidence of small-study effects — this would provide quantitative justification for multi-criterion quality filters in evidence grading systems such as GRADE. The openly released severity dashboard would allow guideline developers to query any Cochrane meta-analysis in the corpus and retrieve its automated flaw profile before incorporating its findings into a recommendation. This represents a scalable, reproducible approach to evidence quality surveillance that complements existing qualitative tools such as AMSTAR-2.
 
 ---
 
