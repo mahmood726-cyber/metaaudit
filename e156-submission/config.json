@@ -2,7 +2,7 @@
   "title": "MetaAudit: Reproducibility Capsule for Automated Meta-Analytic Quality Audits",
   "slug": "metaaudit",
   "date": "2026-03-28",
-  "path": "C:\\MetaAudit",
+  "path": "..",
   "type": "methods",
   "primary_estimand": "documentation proportion",
   "certainty": "moderate",
