@@ -13,6 +13,23 @@
 
 library(metafor)
 
+resolve_project_root <- function() {
+  args <- commandArgs(trailingOnly = FALSE)
+  file_arg <- grep("^--file=", args, value = TRUE)
+  if (length(file_arg) > 0) {
+    script_path <- sub("^--file=", "", file_arg[[1]])
+    return(normalizePath(file.path(dirname(script_path), ".."), winslash = "/", mustWork = TRUE))
+  }
+  normalizePath("..", winslash = "/", mustWork = TRUE)
+}
+
+PROJECT_ROOT <- resolve_project_root()
+PY_IMPORT_PREFIX <- paste0(
+  "import numpy as np; import sys; sys.path.insert(0, ",
+  shQuote(PROJECT_ROOT),
+  "); "
+)
+
 cat("=== MetaAudit R Cross-Validation ===\n")
 cat("metafor version:", as.character(packageVersion("metafor")), "\n")
 cat("Note: Python applies max(1, HKSJ_factor) floor; R comparison adjusts for this.\n\n")
@@ -71,7 +88,7 @@ apply_hksj_floor <- function(res) {
 # Helper: get Python values for given yi, vi
 get_python_vals <- function(yi_str, vi_str) {
   cmd <- paste0(
-    "import numpy as np; import sys; sys.path.insert(0, 'C:/MetaAudit'); ",
+    PY_IMPORT_PREFIX,
     "from metaaudit.recompute import pool_effects_reml, compute_prediction_interval; ",
     "yi=np.array(", yi_str, "); vi=np.array(", vi_str, "); ",
     "p=pool_effects_reml(yi,vi); ",
@@ -128,7 +145,7 @@ vi1 <- 1/a + 1/b + 1/cc + 1/d
 
 # Python computes log-OR internally, so pass raw data
 py_cmd_b1 <- paste0(
-  "import numpy as np; import sys; sys.path.insert(0, 'C:/MetaAudit'); ",
+  PY_IMPORT_PREFIX,
   "from metaaudit.recompute import compute_log_or, pool_effects_reml, compute_prediction_interval; ",
   "ec=np.array([10,20,15,25,12]); en=np.array([50,80,60,100,45]); ",
   "cc=np.array([15,25,20,30,18]); cn=np.array([55,85,65,95,50]); ",
@@ -168,7 +185,7 @@ vi2 <- (e_sd^2)/e_n2 + (c_sd^2)/c_n2
 
 # Use exact Python compute_md for proper comparison
 py_cmd_b2 <- paste0(
-  "import numpy as np; import sys; sys.path.insert(0, 'C:/MetaAudit'); ",
+  PY_IMPORT_PREFIX,
   "from metaaudit.recompute import compute_md, pool_effects_reml, compute_prediction_interval; ",
   "em=np.array([5.2,4.8,5.5,4.9]); esd=np.array([1.1,1.3,0.9,1.2]); en=np.array([30,25,35,28]); ",
   "cm=np.array([4.5,4.2,4.8,4.3]); csd=np.array([1.2,1.4,1.0,1.3]); cn=np.array([32,27,33,30]); ",
@@ -209,7 +226,7 @@ a3 <- e3_cases; b3 <- e3_n-e3_cases; cc3 <- c3_cases; d3 <- c3_n-c3_cases
 yi3 <- log((a3*d3)/(b3*cc3)); vi3 <- 1/a3+1/b3+1/cc3+1/d3
 
 py_cmd_b3 <- paste0(
-  "import numpy as np; import sys; sys.path.insert(0, 'C:/MetaAudit'); ",
+  PY_IMPORT_PREFIX,
   "from metaaudit.recompute import pool_effects_reml, compute_prediction_interval; ",
   "a=np.array([3,12,25,8,40,5,18,30],float); b=np.array([20,50,80,30,120,25,60,100],float)-a; ",
   "c=np.array([8,18,20,12,35,10,22,25],float); d=np.array([22,55,75,35,110,28,65,95],float)-c; ",

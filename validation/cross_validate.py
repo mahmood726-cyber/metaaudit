@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import io
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -41,9 +42,35 @@ def _resolve_pairwise_dir():
 
 DATA_DIR = _resolve_pairwise_dir()
 R_SCRIPT = PROJECT_ROOT / "validation" / "metafor_validate.R"
-RSCRIPT = r"C:\Program Files\R\R-4.5.2\bin\Rscript.exe"
 OUTPUT_DIR = PROJECT_ROOT / "validation"
 N_REVIEWS  = 10
+
+
+def resolve_rscript_path() -> Path:
+    env_rscript = os.getenv("RSCRIPT") or os.getenv("RSCRIPT_PATH")
+    candidates: list[Path] = []
+    if env_rscript:
+        candidates.append(Path(env_rscript).expanduser())
+
+    which_rscript = shutil.which("Rscript")
+    if which_rscript:
+        candidates.append(Path(which_rscript))
+
+    candidates.extend([
+        Path(r"C:\Program Files\R\R-4.5.2\bin\Rscript.exe"),
+        Path(r"C:\Program Files\R\R-4.5.2\bin\x64\Rscript.exe"),
+        Path(r"C:\Program Files\R\R-4.4.3\bin\Rscript.exe"),
+        Path(r"C:\Program Files\R\R-4.4.3\bin\x64\Rscript.exe"),
+    ])
+
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate.resolve()
+
+    return Path(which_rscript) if which_rscript else candidates[0]
+
+
+RSCRIPT = resolve_rscript_path()
 
 # ── tolerances ───────────────────────────────────────────────────────────────
 TOL_ESTIMATE = 0.001
@@ -75,7 +102,7 @@ def run_r(csv_path: str) -> dict | None:
     """Call Rscript and parse key=value output. Returns None on failure."""
     try:
         result = subprocess.run(
-            [RSCRIPT, "--no-save", "--no-restore", str(R_SCRIPT), csv_path],
+            [str(RSCRIPT), "--no-save", "--no-restore", str(R_SCRIPT), csv_path],
             capture_output=True, text=True, timeout=120
         )
         if result.returncode != 0:
