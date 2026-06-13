@@ -61,14 +61,14 @@ Command-line entry point `run_audit.py` runs the full pipeline end-to-end and em
 
 ```bash
 # from repo root
-python -m pytest tests/                 # 88 unit tests, all expected to pass
+python -m pytest tests/                 # 95 unit tests pass (3 skipped: optional deps/data)
 python run_audit.py --data PATH/TO/pairwise70  # full audit (~20 minutes)
 python build_dashboard.py               # generates dashboard/index.html
 ```
 
 ## Testing
 
-- 88 unit tests (`pytest --collect-only -q | tail -1`)
+- 98 tests collected, 95 pass and 3 skip (`pytest --collect-only -q | tail -1`)
 - One test per detector, plus integration, loader, recompute, severity, correlator, export, and path-handling tests
 
 ## Citation

@@ -4,7 +4,8 @@ import sys
 import io
 import numpy as np
 
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+if "pytest" not in sys.modules:
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
 from metaaudit.recompute import compute_log_or, compute_md, pool_effects_reml, compute_prediction_interval
 
