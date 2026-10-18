@@ -61,14 +61,14 @@ Command-line entry point `run_audit.py` runs the full pipeline end-to-end and em
 
 ```bash
 # from repo root
-python -m pytest tests/                 # 95 unit tests pass (3 skipped: optional deps/data)
+python -m pytest tests/                 # default regression and data contracts
 python run_audit.py --data PATH/TO/pairwise70  # full audit (~20 minutes)
 python build_dashboard.py               # generates dashboard/index.html
 ```
 
 ## Testing
 
-- 98 tests collected, 95 pass and 3 skip (`pytest --collect-only -q | tail -1`)
+- Run `python -m pytest -q` for current test results; external-data and browser checks declare their prerequisites.
 - One test per detector, plus integration, loader, recompute, severity, correlator, export, and path-handling tests
 
 ## Citation
@@ -92,3 +92,18 @@ MIT — see `LICENSE`.
 ## Author
 
 Mahmood Ahmad (mahmood.ahmad2@nhs.net, ORCID `0009-0003-7781-4478`), Tahir Heart Institute.
+
+### Dashboard builder inputs
+
+`python build_dashboard.py` requires `results/dashboard_data.json` from the
+audit pipeline and `dashboard/index.template.html`. Importing the builder does
+not read inputs or rebuild files. Use `--data`, `--template`, and `--output`
+for explicit locations. Missing inputs, invalid JSON (including non-finite
+values), or a template without exactly one data marker fail before replacing
+an existing dashboard. JSON text is escaped for embedding in an HTML script.
+
+For the browser contract, install `playwright` and run `python -m playwright
+install chromium`, then set `RUN_BROWSER_TESTS=1` and run
+`python -m pytest tests/test_ui.py -q`. It builds a temporary page from the
+committed dashboard snapshot and tests navigation and filtering at
+`http://127.0.0.1:8000/`.

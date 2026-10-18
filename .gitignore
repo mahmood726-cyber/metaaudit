@@ -15,3 +15,6 @@ sentinel-findings.md
 sentinel-findings.jsonl
 DECISIONS.md
 PROGRESS.md
+
+# Chromium diagnostic log from browser tests
+debug.log
