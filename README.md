@@ -73,13 +73,13 @@ python build_dashboard.py               # generates dashboard/index.html
 
 ## Citation
 
-See `paper/metaaudit_bmj_main.md` for the full manuscript (under submission). Interim citation:
+See `paper/metaaudit_bmj_main.md` for the full manuscript. Interim citation:
 
 > Ahmad M. MetaAudit: A computational full-spectrum audit of 6,229 Cochrane meta-analyses reveals pervasive methodological flaws. Manuscript, 2026.
 
 ## Related work in the portfolio
 
-MetaAudit is the **Layer-2 audit engine** in the evidence-intelligence stack described in the [portfolio manifesto](https://github.com/mahmood726-cyber/) (BMJ Analysis, under submission). Downstream tools that consume MetaAudit output include:
+MetaAudit is the **Layer-2 audit engine** in the evidence-intelligence stack described in the [portfolio manifesto](https://github.com/mahmood726-cyber/). Downstream tools that consume MetaAudit output include:
 
 - [EvidenceOracle](https://github.com/mahmood726-cyber/EvidenceOracle) — ML prediction of MA overturn
 - [ContradictionMap](https://github.com/mahmood726-cyber/ContradictionMap) — cross-review contradictions
